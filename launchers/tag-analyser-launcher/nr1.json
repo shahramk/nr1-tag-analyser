@@ -1,0 +1,7 @@
+{
+    "schemaType": "LAUNCHER",
+    "id": "tag-analyser-launcher",
+    "displayName": "Tag Analyser",
+    "description": "Analyze and report entity mandatory tags",
+    "rootNerdletId": "tag-analyser-nerdlet"
+}

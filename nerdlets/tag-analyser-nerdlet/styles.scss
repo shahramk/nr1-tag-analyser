@@ -1,0 +1,28 @@
+.split {
+    width: 100%;
+    // height: 100%;
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+}
+.left {
+    width: 23%;
+    // height: 660px;
+    text-align: left;
+    overflow-y: scroll;
+ }
+.right {
+    width: 77%;
+    // height: 650px;
+    text-align: left;
+    margin: 10px;
+}
+
+.Entity {
+    width: 80%;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 3px #ccc;
+    padding: 10px;
+    margin: 10px auto;
+    box-sizing: border-box;
+}
