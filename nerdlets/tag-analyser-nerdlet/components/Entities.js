@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 
-import { Dropdown, DropdownItem, Grid, GridItem, HeadingText, Icon, Button } from "nr1";
+import { Dropdown, DropdownItem, Grid, GridItem, HeadingText, Icon, Button, Link, Spacing } from "nr1";
 
 import Entity from "./Entity";
 
@@ -14,11 +14,17 @@ const color = {
     fail: "sandybrown",
   }
 }
+
+const headerStyle = {
+  backgroundColor: "#eee",
+
+};
 class Entities extends Component {
   state = {
     accountScope: "Global", // valid: global, account
     entityTypeScope: "All", // valid: All, domain typer
     entities: this.props.tagHierarchy.entities,
+    filteredEntities: [],
     disableDownload: true,
   };
 
@@ -168,9 +174,43 @@ class Entities extends Component {
     )
   }
 
+  setEntityFilter(mode) {
+    const { accountScope, entityTypeScope } = this.state
+    const entities = this.props.tagHierarchy.entities;
+
+    // set scope to selected account or all accounts if "Global selected"
+    let updatedEntities = (accountScope === "Global") 
+    ? this.props.tagHierarchy.entities 
+    : this.getEntities(this.props.tagHierarchy.entities, this.props.tagHierarchy.accounts[item.split(" ")[0]]);
+    
+    if (entityTypeScope !== "All") {
+        updatedEntities = this.getEntities(updatedEntities, this.props.tagHierarchy.entityTypes[entityTypeScope]);
+    }
+
+    let filteredEntities = [];
+    switch(mode) {
+      case "FULL":
+        filteredEntities = updatedEntities;
+        break;
+
+      case "IN_COMPLIANCE":
+        filteredEntities = updatedEntities.filter(entity => entity.complianceScore === 1);
+        break;
+        
+      case "OUT_OF_COMPLIANCE":
+        filteredEntities = updatedEntities.filter(entity => entity.complianceScore !== 1)
+        break;
+      }
+
+      this.setState({ 
+        entities: filteredEntities,
+      });
+  }
+
   downloadReport(entities) {
     // download pdf with the confftents of displayed entities
     alert('download...')
+
   }
 
   componentDidMount() {
@@ -230,7 +270,7 @@ class Entities extends Component {
             </Dropdown>
           
         </GridItem>
-        <GridItem className="primary-content-container" columnSpan={3}>
+        <GridItem className="primary-content-container" columnSpan={5}>
           <></>
         </GridItem>
         <GridItem className="primary-content-container" columnSpan={1}>
@@ -243,24 +283,11 @@ class Entities extends Component {
             Setup
           </Button>
         </GridItem>
-        <GridItem className="primary-content-container" columnSpan={2}>
-                
-          <Button
-            disabled={disableDownload}
-            onClick={() => this.downloadReport(entities)}
-            type={Button.TYPE.NORMAL}
-            iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__DOWNLOAD}
-            sizeType={Button.SIZE_TYPE.SMALL}
-          >
-            Download
-          </Button>
-          
-        </GridItem>
-
-
 
 
         <GridItem className="primary-content-container" columnSpan={12}>
+
+
           <div className="split">
             
             <div className="left">
@@ -299,7 +326,88 @@ class Entities extends Component {
           </div>
         </GridItem>
 
+        <GridItem className="primary-content-container" columnSpan={12}>
+          <Spacing type={[Spacing.TYPE.SMALL]}>
+            <div style={{height: "10px"}}></div>
+          </Spacing>
+        </GridItem>
 
+        <GridItem className="primary-content-container" columnSpan={3}>
+          <Button
+            disabled={disableDownload}
+            onClick={() => this.setEntityFilter("FULL")}
+            type={Button.TYPE.NORMAL}
+            iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__SHOW}
+            sizeType={Button.SIZE_TYPE.SMALL}
+          >
+            All Entities
+          </Button>
+                    
+          <Button
+            disabled={disableDownload}
+            onClick={() => this.setEntityFilter("OUT_OF_COMPLIANCE")}
+            type={Button.TYPE.NORMAL}
+            iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__HIDE_OTHERS}
+            sizeType={Button.SIZE_TYPE.SMALL}
+          >
+            Out of Compliance
+          </Button>
+
+          <Button
+            disabled={disableDownload}
+            onClick={() => this.setEntityFilter("IN_COMPLIANCE")}
+            type={Button.TYPE.NORMAL}
+            iconType={Button.ICON_TYPE.HARDWARE_AND_SOFTWARE__SOFTWARE__LIVE_VIEW}
+            sizeType={Button.SIZE_TYPE.SMALL}
+          >
+            In Compliance
+          </Button>
+
+
+        </GridItem>
+
+        <GridItem className="primary-content-container" columnStart={12}>
+          <Button
+            disabled={disableDownload}
+            onClick={() => this.downloadReport(entities)}
+            type={Button.TYPE.NORMAL}
+            iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__DOWNLOAD}
+            sizeType={Button.SIZE_TYPE.SMALL}
+          >
+            Download
+          </Button>
+        </GridItem>
+
+
+        <GridItem className="primary-content-container" columnSpan={12}>
+          <>
+            <table 
+              style={{
+                width: "99%",
+                // border: "2px", 
+                backgroundColor: "gray",
+                marginLeft: "8px",
+              }}>
+              <tr>
+                <th style={{width: "8%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                  <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Account ID</strong></HeadingText>
+                </th>
+                <th style={{width: "8%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                  <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Type</strong></HeadingText>
+                </th>
+                <th style={{width: "16%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                  <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Name</strong></HeadingText>
+                </th>
+                <th style={{width: "4%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                  <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Score</strong></HeadingText>
+                </th>
+                <th style={{width: "60%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                  <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Entity Tags</strong></HeadingText>
+                </th>
+              </tr>
+            </table>
+          </>
+        </GridItem>
 
 
         <GridItem className="primary-content-container" columnSpan={12} style={{overflow: "scroll"}}>

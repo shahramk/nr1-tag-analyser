@@ -61,7 +61,7 @@ class Entity extends Component {
           }}
           key={key}
         >
-          <div
+          {/* <div
             style={{
               border: "2px solid black",
               borderRadius: "10px",
@@ -76,6 +76,29 @@ class Entity extends Component {
             <p style={{padding: "5px",}}>Entity Type: <strong>{entity.entityType}</strong></p>
             <p style={{padding: "5px",}}>Entity Name: <strong>{entity.name}</strong></p>
             <p style={{padding: "5px",}}>Compliance Score: <strong>{(entity.complianceScore*100).toFixed(2) + "%"}</strong></p>
+          </div> */}
+          <div>
+            <table 
+              style={{width: "99%",}}>
+              <tr>
+                <th style={{width: "20%", fontSize: "16px", textAlign: "center",}}>
+                  <strong>{entity.account.id}</strong>
+                </th>
+                <th style={{width: "22%", fontSize: "16px", textAlign: "center",}}>
+                  <strong>{entity.domain}</strong>
+                </th>
+                <th style={{width: "40%", fontSize: "16px", textAlign: "center",}}>
+                  <strong>{entity.name}</strong>
+                </th>
+                <th style={{width: "8%", fontSize: "16px", textAlign: "center",}}>
+                  <strong>{(entity.complianceScore*100).toFixed(2) + "%"}</strong>
+                </th>
+                {/* <th style={{width: "60%", border: "3px solid black", backgroundColor: "gray"}}>
+                  <strong>Entity Tags</strong>
+                </th> */}
+              </tr>
+            </table>
+
           </div>
         </div>
 
