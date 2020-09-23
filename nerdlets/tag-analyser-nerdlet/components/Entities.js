@@ -4,12 +4,22 @@ import { Dropdown, DropdownItem, Grid, GridItem, HeadingText, Icon, Button } fro
 
 import Entity from "./Entity";
 
-
+const color = {
+  mandatory: {
+    success: "seagreen",
+    fail: "orangered",
+  },
+  optional: {
+    success: "mediumseagreen",
+    fail: "sandybrown",
+  }
+}
 class Entities extends Component {
   state = {
     accountScope: "Global", // valid: global, account
     entityTypeScope: "All", // valid: All, domain typer
     entities: this.props.tagHierarchy.entities,
+    disableDownload: true,
   };
 
   getAccountList() {
@@ -82,12 +92,126 @@ class Entities extends Component {
     }
   }
 
+  XXgetCompliance(entities, itemType, itemName) {
+    Promise.resolve()
+    .then((entities, itemType, itemName) => {
+      switch(itemType) {
+        case "account":
+          if (itemName === "Global") {
+            return entities;
+          } else {
+            // one account
+            return entities.filter(entity => entity.account.id === itemName.split(" ")[0]);
+          }
+          break;
+
+        case "domain":
+          // one domain
+          return entities.filter(entity => entity.domain === itemName);
+          break;
+      }
+
+    })
+    .then(currentEntities => {
+      return {
+        complianceSum: currentEntities.reduce((acc, e) => acc + e.complianceScore, 0),
+        entities: currentEbtities,
+      }
+    })
+    .then(result => {
+      console.log(">> complianceSum: ", result.complianceSum);
+      console.log("score: ", result.complianceSum > 0.00 ?  parseFloat(result.complianceSum / result.entities.length * 100).toFixed(2) : 0.00);
+      return result.complianceSum > 0.00 ?  parseFloat(result.complianceSum / result.entities.length * 100).toFixed(2) : 0.00;
+    });
+  }
+
+
+
+
+  getCompliance(entities, itemType, itemName) {
+    // all accounts
+    let e1 = [];
+
+    switch(itemType) {
+        case "account":
+          if (itemName === "Global") {
+            e1 = entities;
+          } else {
+            // one account
+            e1 = entities.filter(entity => entity.account.id === itemName.split(" ")[0]);
+          }
+          break;
+
+        case "domain":
+          // one domain
+          e1 = entities.filter(entity => entity.domain === itemName);
+          break;
+
+        // default: throw "Error - invalid compliance item type"
+    }
+
+    const complianceSum = e1.reduce((acc, e) => acc + e.complianceScore, 0);
+    console.log(">> complianceSum: ", complianceSum)
+    console.log("result: ", complianceSum > 0.00 ?  parseFloat(complianceSum / e1.length * 100).toFixed(2) : 0.00);
+    return complianceSum > 0.00 ?  parseFloat(complianceSum / e1.length * 100).toFixed(2) : 0.00;
+  }
+
+  addComplianceScore(entities, itemType, itemName) {
+
+    const complianceScorePercent = this.getCompliance(entities, itemType, itemName);
+    
+    let color = "";
+    if (complianceScorePercent >= 90)
+      color = "seagreen";
+    else if (complianceScorePercent > 70)
+      color = "sandybrown";
+    else
+      color = "orangered";
+
+    const boxHeading = itemName === "Global" ? "Overall Compliance" : itemName;
+    const boxSize = itemType === "domain" ? "100px" : "230px"
+    const boxStyle = {
+      border: "5px solid " + color,
+      borderRadius: "10px",
+      padding: "5px 5px",
+      margin: "5px",
+      fontSize: "16px",
+      fontFamily: "Comic Sans MS",
+      textAlign: "center",
+      // display: "flex",
+      // margin: "7px 4px",
+      height: boxSize,
+      width: boxSize,
+    };
+    const boxKey = "score_" + itemName;
+
+    return (
+      <div style={boxStyle}
+      key={boxKey}
+      >
+        <label><strong>{boxHeading}</strong></label>
+        <br/>
+        <br/>
+        <br/>
+        <label style={{fontSize: "28px", color: color}}>
+          {parseFloat(complianceScorePercent) + "%"}
+        </label>
+
+      </div>
+    )
+  }
+
   downloadReport(entities) {
     // download pdf with the confftents of displayed entities
     alert('download...')
   }
+
+  // componentDidMount() {
+  //   console.log(this.state.entities)
+  // }
+
   render() {
-    const { entities, accountScope, entityTypeScope } = this.state
+    const { entities, accountScope, entityTypeScope, disableDownload } = this.state
 
     return (
       <Grid className="primary-grid">
@@ -142,16 +266,6 @@ class Entities extends Component {
           <></>
         </GridItem>
         <GridItem className="primary-content-container" columnSpan={1}>
-          <></>
-          {/* <div>
-            <Icon
-              style={{
-                position: "absolute", right: "50px", padding: "10px", border: "3px solid #eee",
-              }}
-              type={Icon.TYPE.INTERFACE__OPERATIONS__CONFIGURE} />
-            
-          </div> */}
-          
             <Button
               onClick={() => alert('Configuration...')}
               type={Button.TYPE.NORMAL}
@@ -163,6 +277,7 @@ class Entities extends Component {
         </GridItem>
         <GridItem  className="primary-content-container" columnSpan={2}>
             <Button
+              disabled={disableDownload}
               onClick={() => this.downloadReport(entities)}
               type={Button.TYPE.NORMAL}
               iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__DOWNLOAD}
@@ -172,6 +287,49 @@ class Entities extends Component {
             </Button>
           
         </GridItem>
+
+
+
+
+        <GridItem className="primary-content-container" columnSpan={12}>
+          <div className="split">
+            
+            <div className="left">
+              <h2>Global Score</h2>
+              <div 
+              style={{
+                border: "5px solid #ccc",
+                borderRadius: "10px",
+                padding: "10px 10px",
+                margin: "10px",
+              }}
+              >
+                {this.addComplianceScore(entities, "account", accountScope)}
+              </div>
+            </div>
+
+            <div className="right">
+              <h2>Entity Type Score</h2>
+              <div 
+              style={{
+                width: "450px",
+                border: "5px solid #ccc",
+                borderRadius: "10px",
+                padding: "10px 10px",
+                margin: "10px",
+                display: "flex",
+                flexFlow: "row wrap",
+              }}
+              >
+                {Object.keys(this.props.tagHierarchy.entityTypes).map(domain => {
+                  return this.addComplianceScore(entities, "domain", domain)
+                })}
+              </div>
+            </div>
+          </div>
+        </GridItem>
+
+
 
 
         <GridItem className="primary-content-container" columnSpan={12}>

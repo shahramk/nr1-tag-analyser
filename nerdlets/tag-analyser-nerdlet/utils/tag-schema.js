@@ -60,21 +60,21 @@ const SCHEMA = [
 
     {
         label: 'Entity Environment',
-        key: 'environment',
+        key: 'Environment',
         purpose: '',
         enforcement: TAG_SCHEMA_ENFORCEMENT.required,
         allowedValues: ['Dev', 'Test', 'UAT', 'QAT', 'Staging', 'Hotfix', 'Prod', 'NonProd'],
     },
     {
         label: 'Application Name',
-        key: 'applicationname',
+        key: 'Applicationname',
         purpose: '',
         enforcement: TAG_SCHEMA_ENFORCEMENT.required,
         allowedValues: [],
     },
     {
         label: 'Product Name',
-        key: 'product',
+        key: 'Product',
         purpose: '',
         enforcement: TAG_SCHEMA_ENFORCEMENT.required,
         allowedValues: [],

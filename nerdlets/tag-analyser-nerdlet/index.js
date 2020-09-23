@@ -32,8 +32,6 @@ export default class TagVisualizer extends React.Component {
 
   render() {
     const {doneLoading, entityCount, loadedEntities, tagHierarchy} = this.state
-    // const { doneLoading, entityCount, loadedEntities, entities } = this.state; // SK
-    const entities = tagHierarchy // SK
 
     if (entityCount < 1 || loadedEntities < 1) {
       if (doneLoading) {
@@ -43,7 +41,7 @@ export default class TagVisualizer extends React.Component {
           </HeadingText>
         );
       } else {
-        return <Spinner />;
+        return (<Spinner />);
       }
     }
 
@@ -67,12 +65,6 @@ export default class TagVisualizer extends React.Component {
     );
   }
 
-  /**
-   * Loading the tagset for all entities is a bit of a chore.
-   *
-   * The code below implements a progressive loader that handles the paginated entity query api,
-   * unpacking tags from each entity, and building a global tag histogram.
-   */
   startLoadingEntityTags = () => {
     // reset all cached state and then fetch the first page of entity results...
     const { loadEntityBatch } = this;
@@ -198,11 +190,18 @@ export default class TagVisualizer extends React.Component {
       entity.optionalTags = [];
 
       // set mandatory tags for entity
+      let compliance = 0;
       mandatoryTagRules.forEach(rule => {
         const t = tags.find(tag => tag.tagKey === rule.key)
-        const v = typeof(t) === "object" ? t.tagValues : ["<undefined>"]
+        // const v = typeof(t) === "object" ? t.tagValues : ["<undefined>"]
+        let v = ["<undefined>"];
+        if (typeof(t) === "object") {
+          v = t.tagValues;
+          compliance += 1;
+        }
         entity.mandatoryTags.push({ tagKey: rule.key, tagValues: v });
       });
+      entity.complianceScore = compliance / mandatoryTagRules.length; // against all mandatory tags
 
       // set optional tags for entity
       optionalTagRules.forEach(rule => {
