@@ -174,7 +174,7 @@ class Entities extends Component {
       border: "5px solid " + color,
       borderRadius: "10px",
       padding: "5px 5px",
-      margin: "5px",
+      margin: "20px",
       fontSize: "16px",
       fontFamily: "Comic Sans MS",
       textAlign: "center",
@@ -206,9 +206,9 @@ class Entities extends Component {
     alert('download...')
   }
 
-  // componentDidMount() {
-  //   console.log(this.state.entities)
-  // }
+  componentDidMount() {
+    this.setState( { disableDownload: false })
+  }
 
   render() {
     const { entities, accountScope, entityTypeScope, disableDownload } = this.state
@@ -227,6 +227,7 @@ class Entities extends Component {
               display: "inline-block",
               margin: "0 .5em",
               verticalAlign: "middle",
+              backgroundColor: "green",
             }}
           >
             {({ item, index }) => (
@@ -266,25 +267,26 @@ class Entities extends Component {
           <></>
         </GridItem>
         <GridItem className="primary-content-container" columnSpan={1}>
-            <Button
-              onClick={() => alert('Configuration...')}
-              type={Button.TYPE.NORMAL}
-              iconType={Button.ICON_TYPE.HARDWARE_AND_SOFTWARE__HARDWARE__SERVER__A_CONFIGURE}
-              sizeType={Button.SIZE_TYPE.SMALL}
-            >
-              Setup
-            </Button>
+          <Button
+            onClick={() => alert('Configuration...')}
+            type={Button.TYPE.NORMAL}
+            iconType={Button.ICON_TYPE.HARDWARE_AND_SOFTWARE__HARDWARE__SERVER__A_CONFIGURE}
+            sizeType={Button.SIZE_TYPE.SMALL}
+          >
+            Setup
+          </Button>
         </GridItem>
         <GridItem  className="primary-content-container" columnSpan={2}>
-            <Button
-              disabled={disableDownload}
-              onClick={() => this.downloadReport(entities)}
-              type={Button.TYPE.NORMAL}
-              iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__DOWNLOAD}
-              sizeType={Button.SIZE_TYPE.SMALL}
-            >
-              Download
-            </Button>
+                
+          <Button
+            disabled={disableDownload}
+            onClick={() => this.downloadReport(entities)}
+            type={Button.TYPE.NORMAL}
+            iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__DOWNLOAD}
+            sizeType={Button.SIZE_TYPE.SMALL}
+          >
+            Download
+          </Button>
           
         </GridItem>
 
@@ -312,7 +314,7 @@ class Entities extends Component {
               <h2>Entity Type Score</h2>
               <div 
               style={{
-                width: "450px",
+                width: "600px",
                 border: "5px solid #ccc",
                 borderRadius: "10px",
                 padding: "10px 10px",
@@ -332,7 +334,7 @@ class Entities extends Component {
 
 
 
-        <GridItem className="primary-content-container" columnSpan={12}>
+        <GridItem className="primary-content-container" columnSpan={12} style={{overflow: "scroll"}}>
           {entities.map((entity) => (
             <Entity key={entity.guid} entity={entity} />
           ))}
