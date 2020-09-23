@@ -92,42 +92,6 @@ class Entities extends Component {
     }
   }
 
-  XXgetCompliance(entities, itemType, itemName) {
-    Promise.resolve()
-    .then((entities, itemType, itemName) => {
-      switch(itemType) {
-        case "account":
-          if (itemName === "Global") {
-            return entities;
-          } else {
-            // one account
-            return entities.filter(entity => entity.account.id === itemName.split(" ")[0]);
-          }
-          break;
-
-        case "domain":
-          // one domain
-          return entities.filter(entity => entity.domain === itemName);
-          break;
-      }
-
-    })
-    .then(currentEntities => {
-      return {
-        complianceSum: currentEntities.reduce((acc, e) => acc + e.complianceScore, 0),
-        entities: currentEbtities,
-      }
-    })
-    .then(result => {
-      console.log(">> complianceSum: ", result.complianceSum);
-      console.log("score: ", result.complianceSum > 0.00 ?  parseFloat(result.complianceSum / result.entities.length * 100).toFixed(2) : 0.00);
-      return result.complianceSum > 0.00 ?  parseFloat(result.complianceSum / result.entities.length * 100).toFixed(2) : 0.00;
-    });
-  }
-
-
-
-
   getCompliance(entities, itemType, itemName) {
     // all accounts
     let e1 = [];
@@ -138,7 +102,7 @@ class Entities extends Component {
             e1 = entities;
           } else {
             // one account
-            e1 = entities.filter(entity => entity.account.id === itemName.split(" ")[0]);
+            e1 = entities; //.filter(entity => entity.account.id === itemName.split(" ")[0]);
           }
           break;
 
