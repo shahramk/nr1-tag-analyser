@@ -70,12 +70,12 @@ class Entity extends Component {
               fontSize: "14px",
             }}
           >
-            <p style={{padding: "3px",}}>Account Id: <strong>{entity.account.id}</strong></p>
-            <p style={{padding: "3px",}}>Account Name: <strong>{entity.account.name}</strong></p>
-            <p style={{padding: "3px",}}>Domain: <strong>{entity.domain}</strong></p>
-            <p style={{padding: "3px",}}>Entity Type: <strong>{entity.entityType}</strong></p>
-            <p style={{padding: "3px",}}>Entity Name: <strong>{entity.name}</strong></p>
-            <p style={{padding: "3px",}}>Compliance Score: <strong>{(entity.complianceScore*100).toFixed(2) + "%"}</strong></p>
+            <p style={{padding: "5px",}}>Account Id: <strong>{entity.account.id}</strong></p>
+            <p style={{padding: "5px",}}>Account Name: <strong>{entity.account.name}</strong></p>
+            <p style={{padding: "5px",}}>Domain: <strong>{entity.domain}</strong></p>
+            <p style={{padding: "5px",}}>Entity Type: <strong>{entity.entityType}</strong></p>
+            <p style={{padding: "5px",}}>Entity Name: <strong>{entity.name}</strong></p>
+            <p style={{padding: "5px",}}>Compliance Score: <strong>{(entity.complianceScore*100).toFixed(2) + "%"}</strong></p>
           </div>
         </div>
 

@@ -153,23 +153,26 @@ class Entities extends Component {
     const complianceSum = e1.reduce((acc, e) => acc + e.complianceScore, 0);
     console.log(">> complianceSum: ", complianceSum)
     console.log("result: ", complianceSum > 0.00 ?  parseFloat(complianceSum / e1.length * 100).toFixed(2) : 0.00);
-    return complianceSum > 0.00 ?  parseFloat(complianceSum / e1.length * 100).toFixed(2) : 0.00;
+    return {
+      entityCount: e1.length,
+      complianceScorePercent: complianceSum > 0.00 ?  parseFloat(complianceSum / e1.length * 100).toFixed(2) : 0.00,
+    }
   }
 
   addComplianceScore(entities, itemType, itemName) {
 
-    const complianceScorePercent = this.getCompliance(entities, itemType, itemName);
+    const result = this.getCompliance(entities, itemType, itemName);
     
     let color = "";
-    if (complianceScorePercent >= 90)
+    if (result.complianceScorePercent >= 90)
       color = "seagreen";
-    else if (complianceScorePercent > 70)
+    else if (result.complianceScorePercent > 70)
       color = "sandybrown";
     else
       color = "orangered";
 
     const boxHeading = itemName === "Global" ? "Overall Compliance" : itemName;
-    const boxSize = itemType === "domain" ? "100px" : "230px"
+    const boxSize = itemType === "domain" ? "150px" : "230px"
     const boxStyle = {
       border: "5px solid " + color,
       borderRadius: "10px",
@@ -190,11 +193,11 @@ class Entities extends Component {
       key={boxKey}
       >
         <label><strong>{boxHeading}</strong></label>
-        <br/>
-        <br/>
-        <br/>
+        <br/><br/><br/>
+        <label><strong>Entity Count ({result.entityCount})</strong></label>
+        <br/><br/>
         <label style={{fontSize: "28px", color: color}}>
-          {parseFloat(complianceScorePercent) + "%"}
+          {parseFloat(result.complianceScorePercent) + "%"}
         </label>
 
       </div>
@@ -276,7 +279,7 @@ class Entities extends Component {
             Setup
           </Button>
         </GridItem>
-        <GridItem  className="primary-content-container" columnSpan={2}>
+        <GridItem className="primary-content-container" columnSpan={2}>
                 
           <Button
             disabled={disableDownload}
@@ -300,6 +303,7 @@ class Entities extends Component {
               <h2>Global Score</h2>
               <div 
               style={{
+                height: "420px",
                 border: "5px solid #ccc",
                 borderRadius: "10px",
                 padding: "10px 10px",
@@ -314,7 +318,7 @@ class Entities extends Component {
               <h2>Entity Type Score</h2>
               <div 
               style={{
-                width: "600px",
+                width: "700px",
                 border: "5px solid #ccc",
                 borderRadius: "10px",
                 padding: "10px 10px",
