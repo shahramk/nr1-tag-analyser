@@ -12,7 +12,8 @@
     "dependencies": {
         "prop-types": "^15.6.2",
         "react": "^16.6.3",
-        "react-dom": "^16.6.3"
+        "react-dom": "^16.6.3",
+        "@react-pdf/renderer": "^1.6.11"
     },
     "browserslist": [
         "last 2 versions",

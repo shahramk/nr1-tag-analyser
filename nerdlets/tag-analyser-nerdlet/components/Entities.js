@@ -1,8 +1,13 @@
 import React, { Component } from "react";
 
 import { Dropdown, DropdownItem, Grid, GridItem, HeadingText, Icon, Button, Link, Spacing } from "nr1";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 
 import Entity from "./Entity";
+
+import { PdfDocument } from "./PdfDocument";
+import PdfGenerator from "./PdfGenerator"
+
 
 const color = {
   mandatory: {
@@ -25,7 +30,7 @@ class Entities extends Component {
     entityTypeScope: "All", // valid: All, domain typer
     entities: this.props.tagHierarchy.entities,
     filteredEntities: [],
-    disableDownload: true,
+    disableButtons: true,
   };
 
   getAccountList() {
@@ -144,7 +149,8 @@ class Entities extends Component {
     const boxHeading = itemName === "Global" ? "Overall Compliance" : itemName;
     const boxSize = itemType === "domain" ? "150px" : "230px"
     const boxStyle = {
-      border: "5px solid " + color,
+      // border: "5px solid " + color,
+      border: "3px solid black",
       borderRadius: "10px",
       padding: "5px 5px",
       margin: "20px",
@@ -181,7 +187,7 @@ class Entities extends Component {
     // set scope to selected account or all accounts if "Global selected"
     let updatedEntities = (accountScope === "Global") 
     ? this.props.tagHierarchy.entities 
-    : this.getEntities(this.props.tagHierarchy.entities, this.props.tagHierarchy.accounts[item.split(" ")[0]]);
+    : this.getEntities(this.props.tagHierarchy.entities, this.props.tagHierarchy.accounts[accountScope.split(" ")[0]]);
     
     if (entityTypeScope !== "All") {
         updatedEntities = this.getEntities(updatedEntities, this.props.tagHierarchy.entityTypes[entityTypeScope]);
@@ -214,11 +220,12 @@ class Entities extends Component {
   }
 
   componentDidMount() {
-    this.setState( { disableDownload: false })
+    this.setState( { disableButtons: false })
+
   }
 
   render() {
-    const { entities, accountScope, entityTypeScope, disableDownload } = this.state
+    const { entities, accountScope, entityTypeScope, disableButtons } = this.state
 
     return (
       <Grid className="primary-grid">
@@ -332,9 +339,9 @@ class Entities extends Component {
           </Spacing>
         </GridItem>
 
-        <GridItem className="primary-content-container" columnSpan={3}>
+        <GridItem className="primary-content-container" columnSpan={4}>
           <Button
-            disabled={disableDownload}
+            disabled={disableButtons}
             onClick={() => this.setEntityFilter("FULL")}
             type={Button.TYPE.NORMAL}
             iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__SHOW}
@@ -344,7 +351,7 @@ class Entities extends Component {
           </Button>
                     
           <Button
-            disabled={disableDownload}
+            disabled={disableButtons}
             onClick={() => this.setEntityFilter("OUT_OF_COMPLIANCE")}
             type={Button.TYPE.NORMAL}
             iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__HIDE_OTHERS}
@@ -354,7 +361,7 @@ class Entities extends Component {
           </Button>
 
           <Button
-            disabled={disableDownload}
+            disabled={disableButtons}
             onClick={() => this.setEntityFilter("IN_COMPLIANCE")}
             type={Button.TYPE.NORMAL}
             iconType={Button.ICON_TYPE.HARDWARE_AND_SOFTWARE__SOFTWARE__LIVE_VIEW}
@@ -362,20 +369,11 @@ class Entities extends Component {
           >
             In Compliance
           </Button>
-
-
         </GridItem>
 
+
         <GridItem className="primary-content-container" columnStart={12}>
-          <Button
-            disabled={disableDownload}
-            onClick={() => this.downloadReport(entities)}
-            type={Button.TYPE.NORMAL}
-            iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__DOWNLOAD}
-            sizeType={Button.SIZE_TYPE.SMALL}
-          >
-            Download
-          </Button>
+          <PdfGenerator data={entities} />
         </GridItem>
 
 
@@ -388,27 +386,28 @@ class Entities extends Component {
                 backgroundColor: "gray",
                 marginLeft: "8px",
               }}>
-              <tr>
-                <th style={{width: "8%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
-                  <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Account ID</strong></HeadingText>
-                </th>
-                <th style={{width: "8%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
-                  <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Type</strong></HeadingText>
-                </th>
-                <th style={{width: "16%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
-                  <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Name</strong></HeadingText>
-                </th>
-                <th style={{width: "4%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
-                  <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Score</strong></HeadingText>
-                </th>
-                <th style={{width: "60%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
-                  <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Entity Tags</strong></HeadingText>
-                </th>
-              </tr>
+              <thead>
+                <tr>
+                  <th style={{width: "8%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                    <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Account ID</strong></HeadingText>
+                  </th>
+                  <th style={{width: "8%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                    <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Type</strong></HeadingText>
+                  </th>
+                  <th style={{width: "16%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                    <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Name</strong></HeadingText>
+                  </th>
+                  <th style={{width: "4%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                    <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Score</strong></HeadingText>
+                  </th>
+                  <th style={{width: "60%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                    <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Entity Tags</strong></HeadingText>
+                  </th>
+                </tr>
+              </thead>
             </table>
           </>
         </GridItem>
-
 
         <GridItem className="primary-content-container" columnSpan={12} style={{overflow: "scroll"}}>
           {entities.map((entity) => (

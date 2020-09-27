@@ -43,6 +43,11 @@ class Entity extends Component {
       })
   }
 
+  getScoreBand(score) {
+    // TODO
+    return "blue"
+  }
+
   render() {
     // let _this = this
     const { key, entity } = this.props
@@ -61,42 +66,25 @@ class Entity extends Component {
           }}
           key={key}
         >
-          {/* <div
-            style={{
-              border: "2px solid black",
-              borderRadius: "10px",
-              padding: "5px",
-              textIndent: "10px",
-              fontSize: "14px",
-            }}
-          >
-            <p style={{padding: "5px",}}>Account Id: <strong>{entity.account.id}</strong></p>
-            <p style={{padding: "5px",}}>Account Name: <strong>{entity.account.name}</strong></p>
-            <p style={{padding: "5px",}}>Domain: <strong>{entity.domain}</strong></p>
-            <p style={{padding: "5px",}}>Entity Type: <strong>{entity.entityType}</strong></p>
-            <p style={{padding: "5px",}}>Entity Name: <strong>{entity.name}</strong></p>
-            <p style={{padding: "5px",}}>Compliance Score: <strong>{(entity.complianceScore*100).toFixed(2) + "%"}</strong></p>
-          </div> */}
           <div>
             <table 
               style={{width: "99%",}}>
-              <tr>
-                <th style={{width: "20%", fontSize: "16px", textAlign: "center",}}>
-                  <strong>{entity.account.id}</strong>
-                </th>
-                <th style={{width: "22%", fontSize: "16px", textAlign: "center",}}>
-                  <strong>{entity.domain}</strong>
-                </th>
-                <th style={{width: "40%", fontSize: "16px", textAlign: "center",}}>
-                  <strong>{entity.name}</strong>
-                </th>
-                <th style={{width: "8%", fontSize: "16px", textAlign: "center",}}>
-                  <strong>{(entity.complianceScore*100).toFixed(2) + "%"}</strong>
-                </th>
-                {/* <th style={{width: "60%", border: "3px solid black", backgroundColor: "gray"}}>
-                  <strong>Entity Tags</strong>
-                </th> */}
-              </tr>
+                <tbody>
+                  <tr>
+                    <th style={{width: "20%", fontSize: "16px", textAlign: "center",}}>
+                      <strong>{entity.account.id}</strong>
+                    </th>
+                    <th style={{width: "22%", fontSize: "16px", textAlign: "center",}}>
+                      <strong>{entity.domain}</strong>
+                    </th>
+                    <th style={{width: "40%", fontSize: "16px", textAlign: "center",}}>
+                      <strong>{entity.name}</strong>
+                    </th>
+                    <th style={{width: "8%", fontSize: "16px", textAlign: "center", color: this.getScoreBand(entity.complianceScore)}}>
+                      <strong>{(entity.complianceScore*100).toFixed(2) + "%"}</strong>
+                    </th>
+                  </tr>
+              </tbody>
             </table>
 
           </div>
