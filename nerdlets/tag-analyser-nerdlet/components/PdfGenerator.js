@@ -50,7 +50,7 @@ export default class PdfGenerator extends React.Component {
                 <Button 
                 disabled={disableDownload}
                 onClick={() => (this.setState({ pdfIsReady: false }))}
-                type={Button.TYPE.NORMAL}
+                type={Button.TYPE.PRIMARY}
                 iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__DOWNLOAD}
                 sizeType={Button.SIZE_TYPE.SMALL}
                 >

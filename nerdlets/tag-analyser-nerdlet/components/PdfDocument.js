@@ -1,6 +1,8 @@
 import React from "react";
 import { Page, Text, View, Document, StyleSheet, Image } from "@react-pdf/renderer";
 
+import { setComplianceColor , setTagComplianceColor, tagOutput } from "../utils/tag-schema";
+
 
 const unusedStyles = StyleSheet.create({
   section: {
@@ -181,19 +183,6 @@ const styles = StyleSheet.create({
   },
 });
 
-const setEntityComplianceColor = (entityComplianceScore => {
-    if (entityComplianceScore*100 >= 90)
-      return "seagreen";
-    else if (entityComplianceScore*100 > 70)
-      return "sandybrown";
-    else
-      return "orangered";
-})
-
-const setTagComplianceColor = ((tagValues, category) => {
-    return tagValues[0] !== "<undefined>" ? "seagreen": category === "mandatory" ? "orangered" : "sandybrown";
-})
-
 export function PdfDocument(props) {
     // props.data === current active entities in the UI
     console.log("pdf props", props.data);
@@ -212,8 +201,8 @@ export function PdfDocument(props) {
                         <Text style={{fontSize: 24, textAlign: "center", }}>Entity Mandatory Tag Compliance Report</Text>
                         <Text style={{fontSize: 24, textAlign: "center", }}>______________________________________</Text>
                         <Text style={{fontSize: 10, textAlign: 'center'}}>Report Date: {Date().toLocaleString()}</Text>
-                        <Text> </Text>
-                        <Text style={{fontSize: 12, textAlign: 'left'}}>Entity Count: {props.data.length} | Accounts: ({props.accounts}) | Filters: ({props.filters})</Text>
+                        {/* <Text> </Text> */}
+                        <Text style={{fontSize: 10, textAlign: 'left', margin: "5px"}}>Entity Count: ({props.data.length}) | Accounts: ({props.accounts}) | Filters: ({props.filters})</Text>
                     </View>
                     <View style={{
                         fontSize: 15, 
@@ -252,7 +241,7 @@ export function PdfDocument(props) {
                                         <Text key={entity.guid+"_1"} style={{...styles.col, width: '14%'}}>{entity.account.id}</Text>
                                         <Text key={entity.guid+"_2"} style={{...styles.col, width: '18%'}}>{entity.domain}</Text>
                                         <Text key={entity.guid+"_3"} style={{...styles.col, width: '55%'}}>{entity.name}</Text>
-                                        <Text key={entity.guid+"_4"} style={{...styles.col, width: '13%', textAlign: 'right', color: setEntityComplianceColor(entity.complianceScore)}}>{(entity.complianceScore*100).toFixed(2) + "%"}</Text>
+                                        <Text key={entity.guid+"_4"} style={{...styles.col, width: '13%', textAlign: 'right', color: setComplianceColor(entity.complianceScore)}}>{(entity.complianceScore).toFixed(2) + "%"}</Text>
                                     </View>
                                     <Text style={{display: 'block', textAlign: 'center'}}> </Text>
                                     <View style={styles.splitScreen} wrap={false}>

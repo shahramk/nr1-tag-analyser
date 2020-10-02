@@ -424,7 +424,7 @@ class Entities extends Component {
           <GridItem className="primary-content-container" columnStart={12}> {/* PdfGeneraor */}
             <PdfGenerator 
               data={filteredEntities} 
-              accounts={selectedAccounts.length > 0 ? selectedAccounts.join(", ") : "All Accounts"} 
+              accounts={selectedAccounts.length > 0 ? selectedAccounts.map(a => a.split(":")[0]).join(", ") : "All Accounts"} 
               filters={this.getFiltersList().join(", ")}
             />
           </GridItem>

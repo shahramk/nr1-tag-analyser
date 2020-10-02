@@ -1,10 +1,10 @@
 import React, { Component } from "react";
 
-import { setComplianceColor , tagDisplay, tagStyle } from "../utils/tag-schema";
+import { setComplianceColor , tagOutput, tagStyle } from "../utils/tag-schema";
 
 class Entity extends Component {
   
-  addTags(category, entityGuid, entityTags) {
+  addTags(tagCategory, entityGuid, entityTags) {
     return entityTags.map(tag => {
       return (
         <div
@@ -12,13 +12,13 @@ class Entity extends Component {
                 ...tagStyle, 
                 // instead of changing text color add icons for success / fail / warning
                 // color: tag.tagValues[0] === "<undefined>" 
-                //   ? tagDisplay[category].failureColor
-                //   : tagDisplay[category].successColor
+                //   ? tagOutput[tagCategory].failureColor
+                //   : tagOutput[tagCategory].successColor
                 color: "black",
               }}
               key={entityGuid + "_" + tag.tagKey}
           >
-              <img src={tag.tagValues[0] === "<undefined>" ? tagDisplay[category].failureIcon : tagDisplay[category].successIcon} style={{width: "15px", height: "15px", verticalAlign: "center"}}></img>
+              <img src={tag.tagValues[0] === "<undefined>" ? tagOutput[tagCategory].failureIcon : tagOutput[tagCategory].successIcon} style={{width: "15px", height: "15px", verticalAlign: "center"}}></img>
               {" " + tag.tagKey + ": " + tag.tagValues.join(", ")}
           </div>
         )

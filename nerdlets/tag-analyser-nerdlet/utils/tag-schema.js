@@ -143,7 +143,7 @@ const complianceBands = {
     lowBand: { upperLimit: 70, lowerLimit: 0, color: "orangered"},
 }
 
-const tagDisplay = {
+const tagOutput = {
     mandatory: {
       successColor: "seagreen",
       successIcon: iconSuccess,
@@ -172,18 +172,31 @@ const tagStyle = {
     color: "white",
   }
   
-  const setComplianceColor = (s) => {
-    let color;
+const setComplianceColor = (s) => {
     const score = parseFloat(s);
     if (score >= complianceBands.highBand.lowerLimit) // && score <= complianceBands.highBand.upperLimit)
-      color = complianceBands.highBand.color;
+      return complianceBands.highBand.color;
     else if (complianceBands.midBand.lowerLimit <= score  && score < complianceBands.midBand.upperLimit)
-      color = complianceBands.midBand.color;
+      return complianceBands.midBand.color;
     else
-      color = complianceBands.lowBand.color;
-    
-    return color;
+      return complianceBands.lowBand.color;
+
 }
+
+const setTagComplianceColor = ((tagValues, category) => {
+    // return tagValues[0] !== "<undefined>" ? "seagreen": category === "mandatory" ? "orangered" : "sandybrown";
+
+    if (tagValues[0] !== "<undefined>") {
+        return "seagreen"
+    } else {
+        if (category === "mandatory") {
+            return "orangered"
+        }
+        else {
+            return "sandybrown"
+        }
+    }
+})
 
 export {
     SCHEMA, 
@@ -192,7 +205,8 @@ export {
     optionalTagRules, 
     entityTypes,
     complianceBands,
-    tagDisplay,
+    tagOutput,
     tagStyle,
     setComplianceColor,
+    setTagComplianceColor,
 }
