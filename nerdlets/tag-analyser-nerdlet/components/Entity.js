@@ -1,27 +1,6 @@
 import React, { Component } from "react";
 
-const tagStyle = {
-  fontSize: "16px",
-  fontWeight: "bold",
-  border: "4px solid dimgray",
-  borderRadius: "10px",
-  margin: "15px 15px",
-  padding: "8px",
-  // color: "black",
-  // color: "#F5DEB3", 
-  // color: "navajowhite",
-  color: "white",
-}
-const color = {
-  mandatory: {
-    success: "seagreen",
-    fail: "orangered",
-  },
-  optional: {
-    success: "mediumseagreen",
-    fail: "sandybrown",
-  }
-}
+import { setComplianceColor , tagDisplay, tagStyle } from "../utils/tag-schema";
 
 class Entity extends Component {
   
@@ -31,25 +10,22 @@ class Entity extends Component {
         <div
               style={{
                 ...tagStyle, 
-                color: tag.tagValues[0] === "<undefined>" 
-                  ? color[category].fail 
-                  : color[category].success
+                // instead of changing text color add icons for success / fail / warning
+                // color: tag.tagValues[0] === "<undefined>" 
+                //   ? tagDisplay[category].failureColor
+                //   : tagDisplay[category].successColor
+                color: "black",
               }}
               key={entityGuid + "_" + tag.tagKey}
           >
-              {tag.tagKey + ": " + tag.tagValues.join(", ")}
+              <img src={tag.tagValues[0] === "<undefined>" ? tagDisplay[category].failureIcon : tagDisplay[category].successIcon} style={{width: "15px", height: "15px", verticalAlign: "center"}}></img>
+              {" " + tag.tagKey + ": " + tag.tagValues.join(", ")}
           </div>
         )
       })
   }
 
-  getScoreBand(score) {
-    // TODO
-    return "blue"
-  }
-
   render() {
-    // let _this = this
     const { key, entity } = this.props
 
     return (
@@ -80,8 +56,8 @@ class Entity extends Component {
                     <th style={{width: "40%", fontSize: "16px", textAlign: "center",}}>
                       <strong>{entity.name}</strong>
                     </th>
-                    <th style={{width: "8%", fontSize: "16px", textAlign: "center", color: this.getScoreBand(entity.complianceScore)}}>
-                      <strong>{(entity.complianceScore*100).toFixed(2) + "%"}</strong>
+                    <th style={{width: "8%", fontSize: "16px", textAlign: "center", color: setComplianceColor(entity.complianceScore)}}>
+                      <strong>{(entity.complianceScore).toFixed(2) + "%"}</strong>
                     </th>
                   </tr>
               </tbody>
@@ -91,27 +67,23 @@ class Entity extends Component {
         </div>
 
         <div className="right">
-            <div
-              style={{
+            <div style={{
                 display: "flex",
                 flexFlow: "row wrap",
                 margin: "7px 4px",
-              }}
-            >
-              <h2>Mandatory Tags</h2>
+              }}>
+              <h3 style={{textDecoration: "underline"}}>Mandatory Tags</h3>
               {this.addTags("mandatory", entity.guid, entity.mandatoryTags)}
             </div>
 
             <hr></hr>
 
-            <div
-              style={{
+            <div style={{
                 display: "flex",
                 flexFlow: "row wrap",
                 margin: "7px 4px",
-              }}
-            >
-              <h2>Optional Tags</h2>
+              }}>
+              <h3 style={{textDecoration: "underline"}}>Optional Tags</h3>
               {this.addTags("optional", entity.guid, entity.optionalTags)}
             </div>
 

@@ -1,106 +1,47 @@
 import React, { Component } from "react";
 
-import { Dropdown, DropdownItem, Grid, GridItem, HeadingText, Icon, Button, Link, Spacing } from "nr1";
-import { PDFDownloadLink } from "@react-pdf/renderer";
+import { Grid, GridItem, HeadingText, Button, Spacing, Icon, Link } from "nr1";
+import { Menu, Dropdown, Checkbox } from 'semantic-ui-react';
 
 import Entity from "./Entity";
-
-import { PdfDocument } from "./PdfDocument";
+import { setComplianceColor } from "../utils/tag-schema";
 import PdfGenerator from "./PdfGenerator"
 
-
-const color = {
-  mandatory: {
-    success: "seagreen",
-    fail: "orangered",
-  },
-  optional: {
-    success: "mediumseagreen",
-    fail: "sandybrown",
-  }
-}
 
 const headerStyle = {
   backgroundColor: "#eee",
 
 };
+
 class Entities extends Component {
+
   state = {
-    accountScope: "Global", // valid: global, account
-    entityTypeScope: "All", // valid: All, domain typer
     entities: this.props.tagHierarchy.entities,
-    filteredEntities: [],
+    filteredEntities: this.props.tagHierarchy.entities,
+    displayFilter: "FULL",
     disableButtons: true,
+    selectedAccounts: [],
+    accountList: [],
+    complianceItemStatus: {
+      global: true,
+      entityType: [],
+    }
   };
 
-  getAccountList() {
-    const list = [];
-    list.push("Global");
-    this.props.tagHierarchy.entities.map((entity) => {
-      if (list.indexOf(entity.account.id + " - " + entity.account.name) === -1)
-        list.push(entity.account.id + " - " + entity.account.name);
-    });
-    return list;
+  getAccountListMultiSelect() {
+    const accountList = [];
+    this.props.tagHierarchy.accountsList.forEach(account => {
+      accountList.push({key: accountList.length, value: account.id + ": " + account.name, text: account.name});
+    })
+    return accountList;
   }
 
   getEntityTypeList() {
     const list = [];
-    list.push("All");
     this.props.tagHierarchy.entities.map((entity) => {
       if (list.indexOf(entity.domain) === -1) list.push(entity.domain);
     });
     return list;
-  }
-
-  getEntities = (entities, entityGuidList) => {
-    return entities.filter((entity, index, arr) => {
-      if (entityGuidList.includes(entity.guid)) return entity;
-    });
-  };
-
-  updateCurrentScope(scope, item) {
-    let updatedEntities = [];
-    const { entities, accountScope, entityTypeScope, getEntities } = this.state
-
-    switch (scope) {
-
-        case "account":
-            // set scope to selected account or all accounts if "Global selected"
-            updatedEntities = (item === "Global") 
-            ? this.props.tagHierarchy.entities 
-            : this.getEntities(this.props.tagHierarchy.entities, this.props.tagHierarchy.accounts[item.split(" ")[0]]);
-            
-            if (entityTypeScope !== "All") {
-                updatedEntities = this.getEntities(updatedEntities, this.props.tagHierarchy.entityTypes[entityTypeScope]);
-            }
-
-            this.setState({ 
-                entities: updatedEntities,
-                accountScope: item,
-            });
-
-            break;
-
-        case "entityType":
-            // set scope to entity type (domain is used for entityType) or all types if "All" selescted
-            updatedEntities = (item === "All")
-            ? this.props.tagHierarchy.entities
-            : this.getEntities(this.props.tagHierarchy.entities, this.props.tagHierarchy.entityTypes[item]);
-
-            if (accountScope !== "Global") {
-                updatedEntities = this.getEntities(updatedEntities, this.props.tagHierarchy.accounts[accountScope.split(" ")[0]]);
-            }
-
-            this.setState({
-                entities: updatedEntities,
-                entityTypeScope: item,
-            });
-
-            break;
-        
-        default:
-            throw "invalid scope: " + scope;
-    }
   }
 
   getCompliance(entities, itemType, itemName) {
@@ -109,12 +50,7 @@ class Entities extends Component {
 
     switch(itemType) {
         case "account":
-          if (itemName === "Global") {
-            e1 = entities;
-          } else {
-            // one account
-            e1 = entities; //.filter(entity => entity.account.id === itemName.split(" ")[0]);
-          }
+          e1 = entities;
           break;
 
         case "domain":
@@ -126,53 +62,113 @@ class Entities extends Component {
     }
 
     const complianceSum = e1.reduce((acc, e) => acc + e.complianceScore, 0);
-    console.log(">> complianceSum: ", complianceSum)
-    console.log("result: ", complianceSum > 0.00 ?  parseFloat(complianceSum / e1.length * 100).toFixed(2) : 0.00);
+    // console.log(">> complianceSum: ", complianceSum)
+    // console.log("result: ", complianceSum > 0.00 ?  parseFloat(complianceSum / e1.length).toFixed(2) : 0.00);
     return {
       entityCount: e1.length,
-      complianceScorePercent: complianceSum > 0.00 ?  parseFloat(complianceSum / e1.length * 100).toFixed(2) : 0.00,
+      complianceScorePercent: complianceSum > 0.00 ?  parseFloat(complianceSum / e1.length).toFixed(2) : 0.00,
     }
+  }
+
+  setComplianceBackgroundColor(itemType, itemName) {
+    const { complianceItemStatus } = this.state;
+    const item =  itemType === "account" 
+    ? complianceItemStatus.global
+    : complianceItemStatus.entityType.find(domain => domain.name === itemName).active;
+
+    return item ? "white" : "lightgray";
+  }
+
+  setComplianceFilterStatus(itemType, itemName) {
+      // console.log(">>> " + itemName + " compliance score clicked")
+
+      const { entities, complianceItemStatus } = this.state;
+      let { displayFilter } = this.state;
+
+      // add displayFilter = "FULL" when overall compliance is selected - so uncommented this if stmt
+      // if (itemType === "account" && complianceItemStatus.global)
+      //   return; // clicking on active "overall compliance" widget 
+      
+      switch(itemType) {
+        case "account":
+          displayFilter = "FULL";
+          complianceItemStatus.global = true;
+          complianceItemStatus.entityType.forEach(domain => {
+            domain.selected = false;
+            domain.active = true;
+          })
+            
+          break;
+
+        case "domain":
+          const et = complianceItemStatus.entityType.find(domain => domain.name === itemName);
+
+          if (et.selected) { // was selected - now being unselected
+            complianceItemStatus.global = true;
+            complianceItemStatus.entityType.forEach(domain => {
+              domain.selected = false;
+              domain.active = true;
+            })
+          }
+          else {
+            complianceItemStatus.global = false;
+            complianceItemStatus.entityType.forEach(domain => {
+              if (domain.name === itemName) {
+                domain.selected = true;
+                domain.active = true;
+              }
+              else {
+                domain.selected = false;
+                domain.active = false;
+              }
+            })
+          }
+          break;
+      }
+
+      const filteredEntities = this.getFilteredEntities(entities, complianceItemStatus, displayFilter);
+
+      this.setState({ 
+        complianceItemStatus,
+        displayFilter,
+        filteredEntities: filteredEntities,
+      });
   }
 
   addComplianceScore(entities, itemType, itemName) {
 
     const result = this.getCompliance(entities, itemType, itemName);
     
-    let color = "";
-    if (result.complianceScorePercent >= 90)
-      color = "seagreen";
-    else if (result.complianceScorePercent > 70)
-      color = "sandybrown";
-    else
-      color = "orangered";
+    const color = setComplianceColor(result.complianceScorePercent);
 
-    const boxHeading = itemName === "Global" ? "Overall Compliance" : itemName;
-    const boxSize = itemType === "domain" ? "150px" : "230px"
+    const boxHeading = itemType === "account" ? "Overall Compliance" : itemName;
+    const boxSize = itemType === "domain" ? "160px" : "270px"
     const boxStyle = {
-      // border: "5px solid " + color,
       border: "3px solid black",
       borderRadius: "10px",
       padding: "5px 5px",
-      margin: "20px",
+      margin: "5px",
       fontSize: "16px",
       fontFamily: "Comic Sans MS",
       textAlign: "center",
-      // display: "flex",
-      // margin: "7px 4px",
       height: boxSize,
       width: boxSize,
+      backgroundColor: this.setComplianceBackgroundColor(itemType, itemName)
     };
     const boxKey = "score_" + itemName;
 
     return (
       <div style={boxStyle}
       key={boxKey}
+      onClick={() => this.setComplianceFilterStatus(itemType, itemName)}
       >
         <label><strong>{boxHeading}</strong></label>
-        <br/><br/><br/>
+        <br/><br/>
+        {itemType === "domain" ? null : <br/>}
         <label><strong>Entity Count ({result.entityCount})</strong></label>
         <br/><br/>
-        <label style={{fontSize: "28px", color: color}}>
+        {itemType === "domain" ? null : <br/>}
+        <label style={{fontSize: itemType === "domain" ? "28px" : "36px", color: color}}>
           {parseFloat(result.complianceScorePercent) + "%"}
         </label>
 
@@ -180,241 +176,296 @@ class Entities extends Component {
     )
   }
 
-  setEntityFilter(mode) {
-    const { accountScope, entityTypeScope } = this.state
-    const entities = this.props.tagHierarchy.entities;
+  getEntitiesByGuid = (entities, entityGuidList) => {
+    return entities.filter((entity, index, arr) => {
+      if (entityGuidList.includes(entity.guid)) return entity;
+    });
+  };
 
-    // set scope to selected account or all accounts if "Global selected"
-    let updatedEntities = (accountScope === "Global") 
-    ? this.props.tagHierarchy.entities 
-    : this.getEntities(this.props.tagHierarchy.entities, this.props.tagHierarchy.accounts[accountScope.split(" ")[0]]);
-    
-    if (entityTypeScope !== "All") {
-        updatedEntities = this.getEntities(updatedEntities, this.props.tagHierarchy.entityTypes[entityTypeScope]);
+  updateCurrentScope(scope, selectedAccounts) {
+    let updatedEntities = [];
+    const { entities, getEntitiesByGuid } = this.state
+
+    if (selectedAccounts.length === 0) {
+      updatedEntities = this.props.tagHierarchy.entities;
+    } else {
+      let entityGuids = [];
+      var item;
+      for (item in selectedAccounts) {
+        entityGuids = [...entityGuids, ...this.props.tagHierarchy.accounts[selectedAccounts[item].split(":")[0]]];
+      }
+      updatedEntities = this.getEntitiesByGuid(this.props.tagHierarchy.entities, entityGuids);
     }
+    
+    return updatedEntities;
+}
 
-    let filteredEntities = [];
-    switch(mode) {
+  getFilteredEntities(entities, complianceItemStatus, displayFilter) {
+
+    let filteredEntities;
+
+    // filter displayed entities by entity types (if any)
+    complianceItemStatus.entityType.forEach(et => {
+      if (et.selected) {
+        entities = entities.filter(entity => entity.domain === et.name);
+      }
+    });
+
+    switch(displayFilter) {
       case "FULL":
-        filteredEntities = updatedEntities;
+        filteredEntities = entities;
         break;
 
       case "IN_COMPLIANCE":
-        filteredEntities = updatedEntities.filter(entity => entity.complianceScore === 1);
+        filteredEntities = entities.filter(entity => entity.complianceScore === 100);
         break;
-        
+
       case "OUT_OF_COMPLIANCE":
-        filteredEntities = updatedEntities.filter(entity => entity.complianceScore !== 1)
+        filteredEntities = entities.filter(entity => entity.complianceScore !== 100)
         break;
-      }
 
-      this.setState({ 
-        entities: filteredEntities,
+      default: 
+        throw "invalid display filter: " + displayFilter;
+    }
+    
+    return filteredEntities;
+  }
+
+  setEntityFilter(displayFilter) {
+    const { entities, complianceItemStatus } = this.state;
+
+    const filteredEntities = this.getFilteredEntities(entities, complianceItemStatus, displayFilter);
+
+    this.setState({ 
+      displayFilter: displayFilter,
+      filteredEntities,
+    });
+  }
+
+  getFiltersList() {
+    const { complianceItemStatus, displayFilter } = this.state;
+    const entityFilters = [];
+    complianceItemStatus.entityType.forEach(et => { 
+      if (et.selected) entityFilters.push(et.name);
+    });
+    if (["IN_COMPLIANCE", "OUT_OF_COMPLIANCE"].includes(displayFilter)) {
+      entityFilters.push(displayFilter);
+    }
+    return entityFilters.length ? entityFilters : ["None"];
+  }
+
+  componentWillMount() {
+    const accountList = this.getAccountListMultiSelect();
+    const domainList = this.getEntityTypeList();
+
+    const complianceItemStatus = {};
+    complianceItemStatus["global"] = true;
+    complianceItemStatus.entityType = [];
+    domainList.forEach(domainName => {
+      complianceItemStatus.entityType.push({
+        name: domainName,
+        selected: false,
+        active: true,
       });
-  }
+    });
 
-  downloadReport(entities) {
-    // download pdf with the confftents of displayed entities
-    alert('download...')
-
-  }
-
-  componentDidMount() {
-    this.setState( { disableButtons: false })
+    this.setState( { 
+      disableButtons: false, 
+      accountList: accountList ,
+      complianceItemStatus: complianceItemStatus,
+    })
 
   }
 
+  componentDidCatch(error, errorInfo) {
+    // console.log(error, errorInfo);
+  }
+
+  handleDropdownChange(event, data, type) {
+    const { complianceItemStatus, displayFilter } = this.state;
+    const entities = this.updateCurrentScope("account", data.value);
+    const filteredEntities = this.getFilteredEntities(entities, complianceItemStatus, displayFilter);
+    this.setState({ 
+      selectedAccounts: data.value,
+      entities: entities,
+      filteredEntities: filteredEntities,
+    });
+  }
+  
   render() {
-    const { entities, accountScope, entityTypeScope, disableButtons } = this.state
+    const { entities, filteredEntities, disableButtons, accountList, selectedAccounts } = this.state
 
     return (
-      <Grid className="primary-grid">
-        <GridItem className="primary-content-container" columnSpan={2}>
-          <h1>Entities</h1>
-        </GridItem>
-        <GridItem className="primary-content-container" columnSpan={2}>
-          <HeadingText type={HeadingText.TYPE.HEADING_4}>Accounts</HeadingText>
-          <Dropdown
-            title={accountScope}
-            items={this.getAccountList()}
-            style={{
-              display: "inline-block",
-              margin: "0 .5em",
-              verticalAlign: "middle",
-              backgroundColor: "green",
-            }}
-          >
-            {({ item, index }) => (
-              <DropdownItem
-                key={`d-${index}`}
-                onClick={(evt) => this.updateCurrentScope("account", item)}
-              >
-                {item}
-              </DropdownItem>
-            )}
-          </Dropdown>
-        </GridItem>
-        <GridItem className="primary-content-container" columnSpan={2}>
-          <HeadingText type={HeadingText.TYPE.HEADING_4}>Entity Types</HeadingText>
-            <Dropdown
-              title={entityTypeScope}
-              // items={this.props.tagHierarchy.entityTypes}
-              items={this.getEntityTypeList()}
-              style={{
-                display: "inline-block",
-                margin: "0 .5em",
-                verticalAlign: "middle",
-              }}
-            >
-              {({ item, index }) => (
-                <DropdownItem
-                  key={`d-${index}`}
-                  onClick={(evt) => this.updateCurrentScope("entityType", item)}
-                >
-                  {item}
-                </DropdownItem>
-              )}
-            </Dropdown>
-          
-        </GridItem>
-        <GridItem className="primary-content-container" columnSpan={5}>
-          <></>
-        </GridItem>
-        <GridItem className="primary-content-container" columnSpan={1}>
-          <Button
-            onClick={() => alert('Configuration...')}
-            type={Button.TYPE.NORMAL}
-            iconType={Button.ICON_TYPE.HARDWARE_AND_SOFTWARE__HARDWARE__SERVER__A_CONFIGURE}
-            sizeType={Button.SIZE_TYPE.SMALL}
-          >
-            Setup
-          </Button>
-        </GridItem>
+      <div>
 
+        <div style={{height: 120, paddingLeft: 20, paddingRight: 20}}>
+          <h1>Tag Analysis</h1>
+          <hr></hr>
+          <br/>
 
-        <GridItem className="primary-content-container" columnSpan={12}>
-
-
-          <div className="split">
-            
-            <div className="left">
-              <h2>Global Score</h2>
-              <div 
-              style={{
-                height: "420px",
-                border: "5px solid #ccc",
-                borderRadius: "10px",
-                padding: "10px 10px",
-                margin: "10px",
-              }}
-              >
-                {this.addComplianceScore(entities, "account", accountScope)}
-              </div>
-            </div>
-
-            <div className="right">
-              <h2>Entity Type Score</h2>
-              <div 
-              style={{
-                width: "700px",
-                border: "5px solid #ccc",
-                borderRadius: "10px",
-                padding: "10px 10px",
-                margin: "10px",
-                display: "flex",
-                flexFlow: "row wrap",
-              }}
-              >
-                {Object.keys(this.props.tagHierarchy.entityTypes).map(domain => {
-                  return this.addComplianceScore(entities, "domain", domain)
-                })}
-              </div>
+          <div style={{float: "left"}}> {/* account multi-select dropdown */}
+            <div style={{width: "500px", border: "1px solid black"}}>
+              <Menu inverted={false} className="menu-bar">
+                <Dropdown
+                    className="ui multiple selection dropdown"
+                    placeholder='Select Accounts'
+                    options={accountList}
+                    simple
+                    clearable
+                    fluid 
+                    multiple 
+                    search
+                    selection
+                    scrolling
+                    onChange={(event, data) => {
+                        this.handleDropdownChange(event, data, 'sortBy');
+                    }}
+                    />
+              </Menu>
             </div>
           </div>
-        </GridItem>
 
-        <GridItem className="primary-content-container" columnSpan={12}>
-          <Spacing type={[Spacing.TYPE.SMALL]}>
-            <div style={{height: "10px"}}></div>
-          </Spacing>
-        </GridItem>
+          <div style={{float: "right", paddingRight: 5}}> {/* setup button */}
+            <Button
+              onClick={() => alert('Configuration...')}
+              type={Button.TYPE.NORMAL}
+              iconType={Button.ICON_TYPE.HARDWARE_AND_SOFTWARE__HARDWARE__SERVER__A_CONFIGURE}
+              sizeType={Button.SIZE_TYPE.SMALL}
+            >
+              Setup
+            </Button>
+          </div>
+        </div>
 
-        <GridItem className="primary-content-container" columnSpan={4}>
-          <Button
-            disabled={disableButtons}
-            onClick={() => this.setEntityFilter("FULL")}
-            type={Button.TYPE.NORMAL}
-            iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__SHOW}
-            sizeType={Button.SIZE_TYPE.SMALL}
-          >
-            All Entities
-          </Button>
-                    
-          <Button
-            disabled={disableButtons}
-            onClick={() => this.setEntityFilter("OUT_OF_COMPLIANCE")}
-            type={Button.TYPE.NORMAL}
-            iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__HIDE_OTHERS}
-            sizeType={Button.SIZE_TYPE.SMALL}
-          >
-            Out of Compliance
-          </Button>
+        <Grid className="primary-grid">
+          <GridItem className="primary-content-container" columnSpan={12}> {/* compliance scores */}
+            <div className="split">
+              
+              <div className="left">
+                <h2>Global Score</h2>
+                <div 
+                style={{
+                  height: "370px",
+                  border: "5px solid #ccc",
+                  borderRadius: "10px",
+                  padding: "10px 10px",
+                  margin: "10px",
+                }}
+                >
+                  {this.addComplianceScore(entities, "account", "account")}
+                </div>
+              </div>
 
-          <Button
-            disabled={disableButtons}
-            onClick={() => this.setEntityFilter("IN_COMPLIANCE")}
-            type={Button.TYPE.NORMAL}
-            iconType={Button.ICON_TYPE.HARDWARE_AND_SOFTWARE__SOFTWARE__LIVE_VIEW}
-            sizeType={Button.SIZE_TYPE.SMALL}
-          >
-            In Compliance
-          </Button>
-        </GridItem>
+              <div className="right">
+                <h2>Entity Type Score</h2>
+                <div 
+                style={{
+                  width: "700px",
+                  border: "5px solid #ccc",
+                  borderRadius: "10px",
+                  padding: "10px 10px",
+                  margin: "10px",
+                  display: "flex",
+                  flexFlow: "row wrap",
+                }}
+                >
+                  {Object.keys(this.props.tagHierarchy.entityTypes).map(domain => {
+                    return this.addComplianceScore(entities, "domain", domain)
+                  })}
+                </div>
+              </div>
+            </div>
+          </GridItem>
+          <GridItem className="primary-content-container" columnSpan={12}> {/* sapcing */}
+            <Spacing type={[Spacing.TYPE.SMALL]}>
+              <div style={{height: "10px"}}></div>
+            </Spacing>
+          </GridItem>
+          <GridItem className="primary-content-container" columnSpan={4}> {/* 3 filter buttons */}
+            <Button
+              disabled={disableButtons}
+              onClick={() => this.setEntityFilter("FULL")}
+              type={Button.TYPE.NORMAL}
+              iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__SHOW}
+              sizeType={Button.SIZE_TYPE.SMALL}
+            >
+              All Entities
+            </Button>
+                      
+            <Button
+              disabled={disableButtons}
+              onClick={() => this.setEntityFilter("OUT_OF_COMPLIANCE")}
+              type={Button.TYPE.NORMAL}
+              iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__HIDE_OTHERS}
+              sizeType={Button.SIZE_TYPE.SMALL}
+            >
+              Out of Compliance
+            </Button>
 
-
-        <GridItem className="primary-content-container" columnStart={12}>
-          <PdfGenerator data={entities} />
-        </GridItem>
-
-
-        <GridItem className="primary-content-container" columnSpan={12}>
-          <>
-            <table 
-              style={{
-                width: "99%",
-                // border: "2px", 
-                backgroundColor: "gray",
-                marginLeft: "8px",
-              }}>
-              <thead>
-                <tr>
-                  <th style={{width: "8%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
-                    <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Account ID</strong></HeadingText>
-                  </th>
-                  <th style={{width: "8%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
-                    <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Type</strong></HeadingText>
-                  </th>
-                  <th style={{width: "16%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
-                    <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Name</strong></HeadingText>
-                  </th>
-                  <th style={{width: "4%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
-                    <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Score</strong></HeadingText>
-                  </th>
-                  <th style={{width: "60%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
-                    <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Entity Tags</strong></HeadingText>
-                  </th>
-                </tr>
-              </thead>
-            </table>
-          </>
-        </GridItem>
-
-        <GridItem className="primary-content-container" columnSpan={12} style={{overflow: "scroll"}}>
-          {entities.map((entity) => (
-            <Entity key={entity.guid} entity={entity} />
-          ))}
-        </GridItem>
-      </Grid>
+            <Button
+              disabled={disableButtons}
+              onClick={() => this.setEntityFilter("IN_COMPLIANCE")}
+              type={Button.TYPE.NORMAL}
+              iconType={Button.ICON_TYPE.HARDWARE_AND_SOFTWARE__SOFTWARE__LIVE_VIEW}
+              sizeType={Button.SIZE_TYPE.SMALL}
+            >
+              In Compliance
+            </Button>
+          </GridItem>
+          <GridItem className="primary-content-container" columnSpan={2}> {/* heading: ientity count */}
+            <HeadingText type={HeadingText.TYPE.HEADING_4}><strong>Entity Count: ({filteredEntities.length})</strong></HeadingText>
+          </GridItem>
+          <GridItem className="primary-content-container" columnSpan={2}> {/* heading: included accounts */}
+            <HeadingText type={HeadingText.TYPE.HEADING_4}><strong>Accounts: ( {selectedAccounts.length > 0 ? selectedAccounts.join(", ") : "All Accounts"} )</strong></HeadingText>
+          </GridItem>
+          <GridItem className="primary-content-container" columnSpan={2}> {/* heading: enabled filters */}
+            <HeadingText type={HeadingText.TYPE.HEADING_4}><strong>Filters: ({this.getFiltersList().join(", ")})</strong></HeadingText>
+          </GridItem>
+          <GridItem className="primary-content-container" columnStart={12}> {/* PdfGeneraor */}
+            <PdfGenerator 
+              data={filteredEntities} 
+              accounts={selectedAccounts.length > 0 ? selectedAccounts.join(", ") : "All Accounts"} 
+              filters={this.getFiltersList().join(", ")}
+            />
+          </GridItem>
+          <GridItem className="primary-content-container" columnSpan={12}> {/* table heading */}
+            <>
+              <table 
+                style={{
+                  width: "99%",
+                  // border: "2px", 
+                  backgroundColor: "gray",
+                  marginLeft: "8px",
+                }}>
+                <thead>
+                  <tr>
+                    <th style={{width: "10%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                      <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Account ID</strong></HeadingText>
+                    </th>
+                    <th style={{width: "8%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                      <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Type</strong></HeadingText>
+                    </th>
+                    <th style={{width: "16%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                      <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Name</strong></HeadingText>
+                    </th>
+                    <th style={{width: "4%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                      <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Score</strong></HeadingText>
+                    </th>
+                    <th style={{width: "60%", textAlign: "center", border: "3px solid black", backgroundColor: "gray"}}>
+                      <HeadingText style={{headerStyle}} type={HeadingText.TYPE.HEADING_3}><strong>Entity Tags</strong></HeadingText>
+                    </th>
+                  </tr>
+                </thead>
+              </table>
+            </>
+          </GridItem>
+          <GridItem className="primary-content-container" columnSpan={12} style={{overflow: "scroll"}}> {/* entities */}
+            {filteredEntities.map((entity) => (
+              <Entity key={entity.guid} entity={entity} />
+            ))}
+          </GridItem>
+        </Grid>
+      </div>
     );
   }
 

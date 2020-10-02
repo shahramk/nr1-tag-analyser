@@ -212,6 +212,8 @@ export function PdfDocument(props) {
                         <Text style={{fontSize: 24, textAlign: "center", }}>Entity Mandatory Tag Compliance Report</Text>
                         <Text style={{fontSize: 24, textAlign: "center", }}>______________________________________</Text>
                         <Text style={{fontSize: 10, textAlign: 'center'}}>Report Date: {Date().toLocaleString()}</Text>
+                        <Text> </Text>
+                        <Text style={{fontSize: 12, textAlign: 'left'}}>Entity Count: {props.data.length} | Accounts: ({props.accounts}) | Filters: ({props.filters})</Text>
                     </View>
                     <View style={{
                         fontSize: 15, 

@@ -4,6 +4,7 @@ import { Icon, HeadingText, NerdGraphQuery, Spinner } from "nr1";
 import Entities from "./components/Entities";
 import { entityTypes, mandatoryTagRules, optionalTagRules } from "./utils/tag-schema"; // SK
 
+import { Dropdown, Checkbox } from 'semantic-ui-react';
 
 export default class TagVisualizer extends React.Component {
   state = {
@@ -11,6 +12,7 @@ export default class TagVisualizer extends React.Component {
       entities: [],
       accounts: {}, // SK -- {},
       entityTypes: {},
+      accountsList: [],
     },
     entityCount: 0,
     loadedEntities: 0,
@@ -45,7 +47,6 @@ export default class TagVisualizer extends React.Component {
       }
     }
 
-    // const entityData = JSON.stringify(tagHierarchy)
     return (
       <>
         {doneLoading ? null : (
@@ -75,6 +76,7 @@ export default class TagVisualizer extends React.Component {
           entities: [],
           accounts: {}, // SK -- {},
           entityTypes: {},
+          accountsList: [],
         },
         entityCount: 0,
         loadedEntities: 0,
@@ -201,7 +203,7 @@ export default class TagVisualizer extends React.Component {
         }
         entity.mandatoryTags.push({ tagKey: rule.key, tagValues: v });
       });
-      entity.complianceScore = compliance / mandatoryTagRules.length; // against all mandatory tags
+      entity.complianceScore = compliance / mandatoryTagRules.length * 100; // against all mandatory tags
 
       // set optional tags for entity
       optionalTagRules.forEach(rule => {
@@ -214,6 +216,11 @@ export default class TagVisualizer extends React.Component {
       const acctId = /*'rpm-' +*/ entity.account.id.toString()
       if (!tagHierarchy.accounts[acctId]) tagHierarchy.accounts[acctId] = []
       tagHierarchy.accounts[acctId].push(entity.guid)
+
+      if ( typeof(tagHierarchy.accountsList.find(item => item.id === acctId)) === "undefined" ) {
+        // tagHierarchy.accountsList.push( JSON.parse( `{ "${acctId}": "${entity.account.name}"}` ));
+        tagHierarchy.accountsList.push( {id: acctId, name: entity.account.name} );
+      }
 
       
       const domain = entity.domain

@@ -35,7 +35,7 @@ export default class PdfGenerator extends React.Component {
         return (
             pdfIsReady ? (
             <PDFDownloadLink
-                document={<PdfDocument data={data.data} />}
+                document={<PdfDocument data={data.data} accounts={data.accounts} filters={data.filters} />}
                 fileName="document.pdf"
                 style={{
                     textDecoration: "none",

@@ -1,3 +1,7 @@
+import iconSuccess from "../images/green-check-mark-2.png";
+import iconFailure from "../images/red-x-mark-2.png";
+import iconWarning from "../images/warning-2.png";
+
 const TAG_SCHEMA_ENFORCEMENT = {
     required: "required",
     recommended: "recommended",
@@ -129,13 +133,66 @@ const entityTypes = [
     "'MOBILE'", 
     "'BROWSER'",
     "'INFRA'",
+    // "'SYNTH'",
 ]
 
+const complianceBands = {
+    // rule: the loverlimit always falls within the range
+    highBand: { upperLimit: 100, lowerLimit: 90,  color: "seagreen"},
+    midBand: { upperLimit: 90, lowerLimit: 70, color: "sandybrown"},
+    lowBand: { upperLimit: 70, lowerLimit: 0, color: "orangered"},
+}
+
+const tagDisplay = {
+    mandatory: {
+      successColor: "seagreen",
+      successIcon: iconSuccess,
+      failureColor: "orangered",
+      failureIcon: iconFailure,
+    },
+    optional: {
+      successColor: "mediumseagreen",
+      successIcon: iconSuccess,
+      failureColor: "sandybrown",
+      failureIcon: iconWarning,
+    }
+}
+
+const tagStyle = {
+    fontSize: "16px",
+    // fontWeight: "bold",
+    // border: "4px solid dimgray",
+    border: "1px solid dimgray",
+    borderRadius: "10px",
+    margin: "15px 15px",
+    padding: "8px",
+    // // color: "black",
+    // // color: "#F5DEB3", 
+    // // color: "navajowhite",
+    color: "white",
+  }
+  
+  const setComplianceColor = (s) => {
+    let color;
+    const score = parseFloat(s);
+    if (score >= complianceBands.highBand.lowerLimit) // && score <= complianceBands.highBand.upperLimit)
+      color = complianceBands.highBand.color;
+    else if (complianceBands.midBand.lowerLimit <= score  && score < complianceBands.midBand.upperLimit)
+      color = complianceBands.midBand.color;
+    else
+      color = complianceBands.lowBand.color;
+    
+    return color;
+}
 
 export {
     SCHEMA, 
     TAG_SCHEMA_ENFORCEMENT, 
     mandatoryTagRules, 
     optionalTagRules, 
-    entityTypes
+    entityTypes,
+    complianceBands,
+    tagDisplay,
+    tagStyle,
+    setComplianceColor,
 }
