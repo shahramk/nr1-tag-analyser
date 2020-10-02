@@ -423,10 +423,15 @@ class Entities extends Component {
           </GridItem>
           <GridItem className="primary-content-container" columnStart={12}> {/* PdfGeneraor */}
             <PdfGenerator 
-              data={filteredEntities} 
+              data={filteredEntities.sort(function(a, b) {return a.account.id - b.account.id;}) }
               accounts={selectedAccounts.length > 0 ? selectedAccounts.map(a => a.split(":")[0]).join(", ") : "All Accounts"} 
               filters={this.getFiltersList().join(", ")}
             />
+          </GridItem>
+          <GridItem className="primary-content-container" columnSpan={12}> {/* sapcing */}
+            <Spacing type={[Spacing.TYPE.SMALL]}>
+              <div style={{maringTop: "1px"}}></div>
+            </Spacing>
           </GridItem>
           <GridItem className="primary-content-container" columnSpan={12}> {/* table heading */}
             <>
