@@ -132,6 +132,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     // marginBottom: 5,
   },
+  image: {
+    width: 10, 
+    height: 10, 
+    verticalAlign: "center",
+  },
+
   bulletPoint: {
     width: 10,
     fontSize: 12,
@@ -254,7 +260,8 @@ export function PdfDocument(props) {
                                                         key={entity.guid+"_"+tag.tagKey+"_100"+ i.toString()} 
                                                         style={{fontSize: 12, paddingLeft: 10, color: setTagComplianceColor(tag.tagValues, "mandatory")}}
                                                         >
-                                                            <Text style={styles.bulletPoint}>• </Text>{tag.tagKey + ": " + tag.tagValues.join(", ")}</Text>
+                                                            <Image src={tag.tagValues[0] === "<undefined>" ? tagOutput["mandatory"].failureIcon : tagOutput["mandatory"].successIcon} style={styles.image}/>
+                                                            {" - " + tag.tagKey + ": " + tag.tagValues.join(", ")}</Text>
                                                         </>
                                                     )
                                                 })}
@@ -268,7 +275,8 @@ export function PdfDocument(props) {
                                                         key={entity.guid+"_"+tag.tagKey+"_200"+ i.toString()} 
                                                         style={{fontSize: 12, paddingLeft: 10, color: setTagComplianceColor(tag.tagValues, "optional")}}
                                                         >
-                                                            <Text style={styles.bulletPoint}>• </Text>{tag.tagKey + ": " + tag.tagValues.join(", ")}</Text>
+                                                            <Image src={tag.tagValues[0] === "<undefined>" ? tagOutput["optional"].failureIcon : tagOutput["optional"].successIcon} style={styles.image}/>
+                                                            {" - " + tag.tagKey + ": " + tag.tagValues.join(", ")}</Text>
                                                         </>
                                                     )
                                                 })}
