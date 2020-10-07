@@ -2,9 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { Grid, GridItem, HeadingText, Button, Spacing } from 'nr1';
-import { Menu, Dropdown } from 'semantic-ui-react';
-
 import Entity from './Entity';
+import MenuBar from './MenuBar/MenuBar';
 import { setComplianceColor } from '../utils/tag-schema';
 import PdfGenerator from './PdfGenerator';
 
@@ -342,53 +341,10 @@ class Entities extends React.Component {
     } = this.state;
 
     return (
-      <div>
-        <div style={{ height: 120, paddingLeft: 20, paddingRight: 20 }}>
-          <h1>Tag Analysis</h1>
-          <hr />
-          <br />
+      <div className="container">
+        <MenuBar accounts={accountList} change={this.handleDropdownChange} />
 
-          <div style={{ float: 'left' }}>
-            {' '}
-            {/* account multi-select dropdown */}
-            <div style={{ width: '500px', border: '1px solid black' }}>
-              <Menu inverted={false} className="menu-bar">
-                <Dropdown
-                  className="ui multiple selection dropdown"
-                  placeholder="Select Accounts"
-                  options={accountList}
-                  simple
-                  clearable
-                  fluid
-                  multiple
-                  search
-                  selection
-                  scrolling
-                  onChange={(event, data) => {
-                    this.handleDropdownChange(data);
-                  }}
-                />
-              </Menu>
-            </div>
-          </div>
-
-          <div style={{ float: 'right', paddingRight: 5 }}>
-            {' '}
-            {/* setup button */}
-            <Button
-              onClick={() => alert('Configuration...')}
-              type={Button.TYPE.NORMAL}
-              iconType={
-                Button.ICON_TYPE
-                  .HARDWARE_AND_SOFTWARE__HARDWARE__SERVER__A_CONFIGURE
-              }
-              sizeType={Button.SIZE_TYPE.SMALL}
-            >
-              Setup
-            </Button>
-          </div>
-        </div>
-
+        <div className="score__container">
         <Grid className="primary-grid">
           <GridItem className="primary-content-container" columnSpan={12}>
             {' '}
@@ -630,6 +586,7 @@ class Entities extends React.Component {
             ))}
           </GridItem>
         </Grid>
+        </div>
       </div>
     );
   }
