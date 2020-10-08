@@ -8,6 +8,11 @@
   @include defaultPanel;
 }
 
+.table__container {
+  @include baseContainer;
+}
+
+
 .split {
     width: 99%;
     // height: 100%;
