@@ -4,6 +4,10 @@
   @include baseContainer;
 }
 
+.score__panel {
+  @include defaultPanel;
+}
+
 .split {
     width: 99%;
     // height: 100%;

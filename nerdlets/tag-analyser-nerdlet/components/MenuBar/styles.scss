@@ -31,4 +31,8 @@
   .search {
     display: none!important;
   }
+
+  &:hover {
+    z-index: 10;
+  }
 }
