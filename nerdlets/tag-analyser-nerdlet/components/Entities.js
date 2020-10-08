@@ -1,10 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Grid, GridItem, Stack, StackItem, HeadingText, Button, Spacing } from 'nr1';
+import { Grid, GridItem, Stack, StackItem, HeadingText, Spacing } from 'nr1';
 import Entity from './Entity';
 import MenuBar from './MenuBar/MenuBar';
 import ComplianceScore from './ComplianceScore/ComplianceScore';
+import EntityHeader from './EntityTable/EntityHeader';
 import PdfGenerator from './PdfGenerator';
 
 const headerStyle = {
@@ -125,9 +126,7 @@ class Entities extends React.Component {
       selectedAccounts.forEach((item) => {
         entityGuids = [
           ...entityGuids,
-          ...this.props.tagHierarchy.accounts[
-          item.split(':')[0]
-          ],
+          ...this.props.tagHierarchy.accounts[item.split(':')[0]],
         ];
       });
       updatedEntities = this.getEntitiesByGuid(
@@ -171,21 +170,6 @@ class Entities extends React.Component {
     }
 
     return filteredEntities;
-  }
-
-  setEntityFilter(displayFilter) {
-    const { entities, complianceItemStatus } = this.state;
-
-    const filteredEntities = this.getFilteredEntities(
-      entities,
-      complianceItemStatus,
-      displayFilter
-    );
-
-    this.setState({
-      displayFilter: displayFilter,
-      filteredEntities,
-    });
   }
 
   getFiltersList() {
@@ -253,7 +237,7 @@ class Entities extends React.Component {
       displayFilter,
       filteredEntities: filteredEntities,
     });
-  }
+  };
 
   onSelectAccount = (data) => {
     const { complianceItemStatus, displayFilter } = this.state;
@@ -267,6 +251,21 @@ class Entities extends React.Component {
       selectedAccounts: data.value,
       entities: entities,
       filteredEntities: filteredEntities,
+    });
+  };
+
+  onFilterEntityTable = (displayFilter) => {
+    const { entities, complianceItemStatus } = this.state;
+
+    const filteredEntities = this.getFilteredEntities(
+      entities,
+      complianceItemStatus,
+      displayFilter
+    );
+
+    this.setState({
+      displayFilter: displayFilter,
+      filteredEntities,
     });
   }
 
@@ -285,7 +284,6 @@ class Entities extends React.Component {
     const {
       entities,
       filteredEntities,
-      disableButtons,
       accountList,
       selectedAccounts,
     } = this.state;
@@ -317,90 +315,18 @@ class Entities extends React.Component {
           </div>
         </div>
 
+        <div className="table__container">
+          <EntityHeader
+            filter={this.onFilterEntityTable}
+            count={filteredEntities.length}
+            accounts={
+              selectedAccounts.length > 0 ? selectedAccounts.join(', ') : ''
+            }
+            entityType={this.getFiltersList().join(', ')}
+          />
+        </div>
 
         <Grid>
-          <GridItem className="primary-content-container" columnSpan={12}>
-            {' '}
-            {/* sapcing */}
-            <Spacing type={[Spacing.TYPE.SMALL]}>
-              <div style={{ height: '10px' }} />
-            </Spacing>
-          </GridItem>
-          <GridItem className="primary-content-container" columnSpan={4}>
-            {' '}
-            {/* 3 filter buttons */}
-            <Button
-              disabled={disableButtons}
-              onClick={() => this.setEntityFilter('FULL')}
-              type={Button.TYPE.NORMAL}
-              iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__SHOW}
-              sizeType={Button.SIZE_TYPE.SMALL}
-            >
-              All Entities
-            </Button>
-            <Button
-              disabled={disableButtons}
-              onClick={() => this.setEntityFilter('OUT_OF_COMPLIANCE')}
-              type={Button.TYPE.NORMAL}
-              iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__HIDE_OTHERS}
-              sizeType={Button.SIZE_TYPE.SMALL}
-            >
-              Out of Compliance
-            </Button>
-            <Button
-              disabled={disableButtons}
-              onClick={() => this.setEntityFilter('IN_COMPLIANCE')}
-              type={Button.TYPE.NORMAL}
-              iconType={
-                Button.ICON_TYPE.HARDWARE_AND_SOFTWARE__SOFTWARE__LIVE_VIEW
-              }
-              sizeType={Button.SIZE_TYPE.SMALL}
-            >
-              In Compliance
-            </Button>
-          </GridItem>
-          <GridItem className="primary-content-container" columnSpan={2}>
-            {' '}
-            {/* heading: ientity count */}
-            <HeadingText type={HeadingText.TYPE.HEADING_4}>
-              <strong>Entity Count: ({filteredEntities.length})</strong>
-            </HeadingText>
-          </GridItem>
-          <GridItem className="primary-content-container" columnSpan={2}>
-            {' '}
-            {/* heading: included accounts */}
-            <HeadingText type={HeadingText.TYPE.HEADING_4}>
-              <strong>
-                Accounts: ({' '}
-                {selectedAccounts.length > 0
-                  ? selectedAccounts.join(', ')
-                  : 'All Accounts'}{' '}
-                )
-              </strong>
-            </HeadingText>
-          </GridItem>
-          <GridItem className="primary-content-container" columnSpan={2}>
-            {' '}
-            {/* heading: enabled filters */}
-            <HeadingText type={HeadingText.TYPE.HEADING_4}>
-              <strong>Filters: ({this.getFiltersList().join(', ')})</strong>
-            </HeadingText>
-          </GridItem>
-          <GridItem className="primary-content-container" columnStart={12}>
-            {' '}
-            {/* PdfGeneraor */}
-            <PdfGenerator
-              data={filteredEntities.sort(function (a, b) {
-                return a.account.id - b.account.id;
-              })}
-              accounts={
-                selectedAccounts.length > 0
-                  ? selectedAccounts.map((a) => a.split(':')[0]).join(', ')
-                  : 'All Accounts'
-              }
-              filters={this.getFiltersList().join(', ')}
-            />
-          </GridItem>
           <GridItem className="primary-content-container" columnSpan={12}>
             {' '}
             {/* sapcing */}

@@ -1,0 +1,21 @@
+@import '../../../shared/scss/base-layout.scss';
+
+.entity__table__header__panel {
+  @include defaultPanel;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0;
+  padding-top: 2rem;
+
+  >.button__row {
+    margin: 0;
+    margin-bottom: .5rem;
+  }
+}
+
+.entity__table__header__message {
+  font-size: 1.3rem;
+  margin-bottom: .5rem;
+}
