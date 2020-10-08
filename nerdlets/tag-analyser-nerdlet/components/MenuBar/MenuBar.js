@@ -26,24 +26,23 @@ const MenuBar = ({ accounts, change }) => {
           />
         </div>
         <div className="menu__bar__item">
-            <Button
-              className="menu__bar__button"
-              onClick={() => null}
-              type={Button.TYPE.PRIMARY}
-              iconType={
-                Button.ICON_TYPE
-                  .HARDWARE_AND_SOFTWARE__HARDWARE__SERVER__A_CONFIGURE
-              }
-              sizeType={Button.SIZE_TYPE.LARGE}
-            >
-              Setup
-            </Button>
-          </div>
-
+          <Button
+            className="menu__bar__button"
+            onClick={() => null}
+            type={Button.TYPE.PRIMARY}
+            iconType={
+              Button.ICON_TYPE
+                .HARDWARE_AND_SOFTWARE__HARDWARE__SERVER__A_CONFIGURE
+            }
+            sizeType={Button.SIZE_TYPE.LARGE}
+          >
+            Setup
+          </Button>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 MenuBar.propTypes = {
   accounts: PropTypes.array.isRequired,

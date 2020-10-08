@@ -1,7 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Grid, GridItem, Stack, StackItem, HeadingText, Button, Spacing } from 'nr1';
+import {
+  Grid,
+  GridItem,
+  Stack,
+  StackItem,
+  HeadingText,
+  Button,
+  Spacing,
+} from 'nr1';
 import Entity from './Entity';
 import MenuBar from './MenuBar/MenuBar';
 import ComplianceScore from './ComplianceScore/ComplianceScore';
@@ -125,9 +133,7 @@ class Entities extends React.Component {
       selectedAccounts.forEach((item) => {
         entityGuids = [
           ...entityGuids,
-          ...this.props.tagHierarchy.accounts[
-          item.split(':')[0]
-          ],
+          ...this.props.tagHierarchy.accounts[item.split(':')[0]],
         ];
       });
       updatedEntities = this.getEntitiesByGuid(
@@ -253,7 +259,7 @@ class Entities extends React.Component {
       displayFilter,
       filteredEntities: filteredEntities,
     });
-  }
+  };
 
   onSelectAccount = (data) => {
     const { complianceItemStatus, displayFilter } = this.state;
@@ -268,7 +274,7 @@ class Entities extends React.Component {
       entities: entities,
       filteredEntities: filteredEntities,
     });
-  }
+  };
 
   renderComplianceScore(entities, itemType, itemName) {
     const compliance = this.getCompliance(entities, itemType, itemName);
