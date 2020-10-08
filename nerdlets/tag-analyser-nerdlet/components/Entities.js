@@ -6,7 +6,6 @@ import Entity from './Entity';
 import MenuBar from './MenuBar/MenuBar';
 import ComplianceScore from './ComplianceScore/ComplianceScore';
 import EntityHeader from './EntityTable/EntityHeader';
-import PdfGenerator from './PdfGenerator';
 
 const headerStyle = {
   backgroundColor: '#eee',
@@ -323,6 +322,9 @@ class Entities extends React.Component {
               selectedAccounts.length > 0 ? selectedAccounts.join(', ') : ''
             }
             entityType={this.getFiltersList().join(', ')}
+            entities={filteredEntities.sort(function (a, b) {
+              return a.account.id - b.account.id;
+            })}
           />
         </div>
 
