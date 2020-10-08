@@ -18,7 +18,7 @@ const ComplianceScore = ({ compliance, select }) => {
 
   const title = type === 'account' ? 'OVERALL' : name;
   const band = getComplianceBand();
-  const status = !active ? 'lightgray' : band;
+  const status = !active ? 'inactive__entity' : band;
 
   return (
     <div className={`compliance__score__container `}>
