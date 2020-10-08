@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Grid, GridItem, HeadingText, Button, Spacing } from 'nr1';
+import { Grid, GridItem, Stack, StackItem, HeadingText, Button, Spacing } from 'nr1';
 import Entity from './Entity';
 import MenuBar from './MenuBar/MenuBar';
-import { setComplianceColor } from '../utils/tag-schema';
+import ComplianceScore from './ComplianceScore/ComplianceScore';
 import PdfGenerator from './PdfGenerator';
 
 const headerStyle = {
@@ -72,157 +72,41 @@ class Entities extends React.Component {
   }
 
   getCompliance(entities, itemType, itemName) {
-    // all accounts
+    const { complianceItemStatus } = this.state;
+
     let e1 = [];
-
     switch (itemType) {
-      case 'account':
-        e1 = entities;
-        break;
-
       case 'domain':
         // one domain
         e1 = entities.filter((entity) => entity.domain === itemName);
         break;
-
-      // default: throw "Error - invalid compliance item type"
+      default: // default to all
+        e1 = entities;
+        break;
     }
 
     const complianceSum = e1.reduce((acc, e) => acc + e.complianceScore, 0);
+
+    const active =
+      itemType === 'account'
+        ? complianceItemStatus.global
+        : complianceItemStatus.entityType.find(
+          (domain) => domain.name === itemName
+        ).active;
+
     // console.log(">> complianceSum: ", complianceSum)
     // console.log("result: ", complianceSum > 0.00 ?  parseFloat(complianceSum / e1.length).toFixed(2) : 0.00);
+
     return {
+      type: itemType,
+      name: itemName,
       entityCount: e1.length,
-      complianceScorePercent:
+      active,
+      score:
         complianceSum > 0.0
           ? parseFloat(complianceSum / e1.length).toFixed(2)
           : 0.0,
     };
-  }
-
-  setComplianceBackgroundColor(itemType, itemName) {
-    const { complianceItemStatus } = this.state;
-
-    const item =
-      itemType === 'account'
-        ? complianceItemStatus.global
-        : complianceItemStatus.entityType.find(
-            (domain) => domain.name === itemName
-          ).active;
-
-    return item ? 'white' : 'lightgray';
-  }
-
-  setComplianceFilterStatus(itemType, itemName) {
-    // console.log(">>> " + itemName + " compliance score clicked")
-
-    const { entities, complianceItemStatus } = this.state;
-    let { displayFilter } = this.state;
-
-    // add displayFilter = "FULL" when overall compliance is selected - so uncommented this if stmt
-    // if (itemType === "account" && complianceItemStatus.global)
-    //   return; // clicking on active "overall compliance" widget
-
-    switch (itemType) {
-      case 'account':
-        displayFilter = 'FULL';
-        complianceItemStatus.global = true;
-        complianceItemStatus.entityType.forEach((domain) => {
-          domain.selected = false;
-          domain.active = true;
-        });
-
-        break;
-
-      case 'domain':
-        const et = complianceItemStatus.entityType.find(
-          (domain) => domain.name === itemName
-        );
-
-        if (et.selected) {
-          // was selected - now being unselected
-          complianceItemStatus.global = true;
-          complianceItemStatus.entityType.forEach((domain) => {
-            domain.selected = false;
-            domain.active = true;
-          });
-        } else {
-          complianceItemStatus.global = false;
-          complianceItemStatus.entityType.forEach((domain) => {
-            if (domain.name === itemName) {
-              domain.selected = true;
-              domain.active = true;
-            } else {
-              domain.selected = false;
-              domain.active = false;
-            }
-          });
-        }
-        break;
-    }
-
-    const filteredEntities = this.getFilteredEntities(
-      entities,
-      complianceItemStatus,
-      displayFilter
-    );
-
-    this.setState({
-      complianceItemStatus,
-      displayFilter,
-      filteredEntities: filteredEntities,
-    });
-  }
-
-  addComplianceScore(entities, itemType, itemName) {
-    const result = this.getCompliance(entities, itemType, itemName);
-
-    const color = setComplianceColor(result.complianceScorePercent);
-
-    const boxHeading = itemType === 'account' ? 'Overall Compliance' : itemName;
-    const boxSize = itemType === 'domain' ? '160px' : '270px';
-    const boxStyle = {
-      border: '3px solid black',
-      borderRadius: '10px',
-      padding: '5px 5px',
-      margin: '5px',
-      fontSize: '16px',
-      fontFamily: 'Comic Sans MS',
-      textAlign: 'center',
-      height: boxSize,
-      width: boxSize,
-      backgroundColor: this.setComplianceBackgroundColor(itemType, itemName),
-    };
-    const boxKey = `score_${itemName}`;
-
-    return (
-      <div
-        style={boxStyle}
-        key={boxKey}
-        onClick={() => this.setComplianceFilterStatus(itemType, itemName)}
-      >
-        <label>
-          <strong>{boxHeading}</strong>
-        </label>
-        <br />
-        <br />
-        {itemType === 'domain' ? null : <br />}
-        <label>
-          <strong>Entity Count ({result.entityCount})</strong>
-        </label>
-        <br />
-        <br />
-        {itemType === 'domain' ? null : <br />}
-        <label
-          style={{
-            fontSize: itemType === 'domain' ? '28px' : '36px',
-            color: color,
-          }}
-        >
-          {`${parseFloat(result.complianceScorePercent)}%`}
-        </label>
-      </div>
-    );
   }
 
   getEntitiesByGuid = (entities, entityGuidList) => {
@@ -242,7 +126,7 @@ class Entities extends React.Component {
         entityGuids = [
           ...entityGuids,
           ...this.props.tagHierarchy.accounts[
-            item.split(':')[0]
+          item.split(':')[0]
           ],
         ];
       });
@@ -316,7 +200,62 @@ class Entities extends React.Component {
     return entityFilters.length ? entityFilters : ['None'];
   }
 
-  handleDropdownChange(data) {
+  onSelectEntityType = (itemType, itemName) => {
+    const { entities, complianceItemStatus } = this.state;
+    let { displayFilter } = this.state;
+
+    switch (itemType) {
+      case 'account':
+        displayFilter = 'FULL';
+        complianceItemStatus.global = true;
+        complianceItemStatus.entityType.forEach((domain) => {
+          domain.selected = false;
+          domain.active = true;
+        });
+
+        break;
+
+      case 'domain':
+        const et = complianceItemStatus.entityType.find(
+          (domain) => domain.name === itemName
+        );
+
+        if (et.selected) {
+          // was selected - now being unselected
+          complianceItemStatus.global = true;
+          complianceItemStatus.entityType.forEach((domain) => {
+            domain.selected = false;
+            domain.active = true;
+          });
+        } else {
+          complianceItemStatus.global = false;
+          complianceItemStatus.entityType.forEach((domain) => {
+            if (domain.name === itemName) {
+              domain.selected = true;
+              domain.active = true;
+            } else {
+              domain.selected = false;
+              domain.active = false;
+            }
+          });
+        }
+        break;
+    }
+
+    const filteredEntities = this.getFilteredEntities(
+      entities,
+      complianceItemStatus,
+      displayFilter
+    );
+
+    this.setState({
+      complianceItemStatus,
+      displayFilter,
+      filteredEntities: filteredEntities,
+    });
+  }
+
+  onSelectAccount = (data) => {
     const { complianceItemStatus, displayFilter } = this.state;
     const entities = this.updateCurrentScope(data.value);
     const filteredEntities = this.getFilteredEntities(
@@ -331,6 +270,17 @@ class Entities extends React.Component {
     });
   }
 
+  renderComplianceScore(entities, itemType, itemName) {
+    const compliance = this.getCompliance(entities, itemType, itemName);
+
+    return (
+      <ComplianceScore
+        key={itemName} 
+        select={this.onSelectEntityType}
+        compliance={compliance} />
+    );
+  }
+
   render() {
     const {
       entities,
@@ -342,55 +292,33 @@ class Entities extends React.Component {
 
     return (
       <div className="container">
-        <MenuBar accounts={accountList} change={this.handleDropdownChange} />
+        <MenuBar accounts={accountList} change={this.onSelectAccount} />
 
         <div className="score__container">
-        <Grid className="primary-grid">
-          <GridItem className="primary-content-container" columnSpan={12}>
-            {' '}
-            {/* compliance scores */}
-            <div className="split">
-              <div className="left">
-                <h2>Global Score</h2>
-                <div
-                  style={{
-                    height: '370px',
-                    border: '5px solid #ccc',
-                    borderRadius: '10px',
-                    padding: '10px 10px',
-                    margin: '10px',
-                  }}
-                >
-                  {this.addComplianceScore(entities, 'account', 'account')}
-                </div>
-              </div>
-
-              <div className="right">
-                <h2>Entity Type Score</h2>
-                <div
-                  style={{
-                    width: '700px',
-                    border: '5px solid #ccc',
-                    borderRadius: '10px',
-                    padding: '10px 10px',
-                    margin: '10px',
-                    display: 'flex',
-                    flexFlow: 'row wrap',
-                  }}
-                >
+          <div className="score__panel">
+            <Stack>
+              <StackItem columnSpan={12}>
+                {this.renderComplianceScore(entities, 'account', 'account')}
+              </StackItem>
+              <StackItem>
+                <Stack>
                   {Object.keys(this.props.tagHierarchy.entityTypes).map(
                     (domain) => {
-                      return this.addComplianceScore(
+                      return this.renderComplianceScore(
                         entities,
                         'domain',
                         domain
                       );
                     }
                   )}
-                </div>
-              </div>
-            </div>
-          </GridItem>
+                </Stack>
+              </StackItem>
+            </Stack>
+          </div>
+        </div>
+
+
+        <Grid>
           <GridItem className="primary-content-container" columnSpan={12}>
             {' '}
             {/* sapcing */}
@@ -586,7 +514,6 @@ class Entities extends React.Component {
             ))}
           </GridItem>
         </Grid>
-        </div>
       </div>
     );
   }
