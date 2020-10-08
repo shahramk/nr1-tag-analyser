@@ -1,7 +1,8 @@
-// @import url('//cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css');
+@import '../../shared/scss/base-layout.scss';
 
-// // @import url('//cdn.jsdelivr.net/npm/semantic-ui/dist/semantic.min.css";
-
+.score__container {
+  @include baseContainer;
+}
 
 .split {
     width: 99%;
@@ -10,13 +11,15 @@
     flex-direction: row;
     text-align: center;
 }
+
 .left {
     width: 40%;
     // height: 660px;
     text-align: left;
     // overflow-y: scroll;
     margin: 10px;
- }
+ 
+  }
 .right {
     width: 60%;
     // height: 650px;
@@ -39,6 +42,5 @@
     padding: "5px 5px";
     margin: "5px";
     font-size: "16px";
-    font-family: "Comic Sans MS";
     text-align: "center";
 }
