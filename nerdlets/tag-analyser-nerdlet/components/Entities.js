@@ -172,21 +172,6 @@ class Entities extends React.Component {
     return filteredEntities;
   }
 
-  setEntityFilter(displayFilter) {
-    const { entities, complianceItemStatus } = this.state;
-
-    const filteredEntities = this.getFilteredEntities(
-      entities,
-      complianceItemStatus,
-      displayFilter
-    );
-
-    this.setState({
-      displayFilter: displayFilter,
-      filteredEntities,
-    });
-  }
-
   getFiltersList() {
     const { complianceItemStatus, displayFilter } = this.state;
     const entityFilters = [];
@@ -269,6 +254,21 @@ class Entities extends React.Component {
     });
   };
 
+  onFilterEntityTable = (displayFilter) => {
+    const { entities, complianceItemStatus } = this.state;
+
+    const filteredEntities = this.getFilteredEntities(
+      entities,
+      complianceItemStatus,
+      displayFilter
+    );
+
+    this.setState({
+      displayFilter: displayFilter,
+      filteredEntities,
+    });
+  }
+
   renderComplianceScore(entities, itemType, itemName) {
     const compliance = this.getCompliance(entities, itemType, itemName);
 
@@ -317,7 +317,7 @@ class Entities extends React.Component {
 
         <div className="table__container">
           <EntityHeader
-            filter={this.setEntityFilter}
+            filter={this.onFilterEntityTable}
             count={filteredEntities.length}
             accounts={
               selectedAccounts.length > 0 ? selectedAccounts.join(', ') : ''

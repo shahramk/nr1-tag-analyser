@@ -5,13 +5,12 @@ import { Button } from 'nr1';
 
 const EntityHeader = ({ filter, count, accounts, entityType }) => {
 
-  console.info('accounts, entityType, count', accounts, entityType, count)
-
   return (
     <div className="entity__table__header__panel">
       <div className="entity__table__header__message">
-        {`Showing ${count}${entityType !== 'None' ? ` ${entityType} ` : ''} entites ${!accounts ? '' : `for account(s) ${accounts}`
-          } `}
+        {`Showing ${count}${
+          entityType !== 'None' ? ` ${entityType} ` : ''
+        } entities ${!accounts ? '' : `for account(s) ${accounts}`} `}
       </div>
       <div className="button__row">
         <Button
