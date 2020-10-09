@@ -1,22 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Grid, GridItem, Stack, StackItem, HeadingText, Spacing } from 'nr1';
-import Entity from './Entity';
+import { Stack, StackItem } from 'nr1';
+
+import { complianceBands } from '../utils/tag-schema';
 import MenuBar from './MenuBar/MenuBar';
 import ComplianceScore from './ComplianceScore/ComplianceScore';
 import EntityHeader from './EntityTable/EntityHeader';
-
-const headerStyle = {
-  backgroundColor: '#eee',
-};
+import EntityTable from './EntityTable/EntityTable';
 
 class Entities extends React.Component {
   state = {
     entities: this.props.tagHierarchy.entities,
     filteredEntities: this.props.tagHierarchy.entities,
     displayFilter: 'FULL',
-    disableButtons: true,
     selectedAccounts: [],
     accountList: [],
     complianceItemStatus: {
@@ -71,6 +68,16 @@ class Entities extends React.Component {
     return list;
   }
 
+  getComplianceBand = (score) => {
+    if (score >= complianceBands.highBand.lowerLimit) return 'high__band';
+    else if (
+      complianceBands.midBand.lowerLimit <= score &&
+      score < complianceBands.midBand.upperLimit
+    )
+      return 'mid__band';
+    else return 'low__band';
+  };
+
   getCompliance(entities, itemType, itemName) {
     const { complianceItemStatus } = this.state;
 
@@ -86,7 +93,10 @@ class Entities extends React.Component {
     }
 
     const complianceSum = e1.reduce((acc, e) => acc + e.complianceScore, 0);
-
+    const score = complianceSum > 0.0
+      ? parseFloat(complianceSum / e1.length).toFixed(2)
+      : 0.0;
+    const band = this.getComplianceBand(score)
     const active =
       itemType === 'account'
         ? complianceItemStatus.global
@@ -94,18 +104,13 @@ class Entities extends React.Component {
           (domain) => domain.name === itemName
         ).active;
 
-    // console.log(">> complianceSum: ", complianceSum)
-    // console.log("result: ", complianceSum > 0.00 ?  parseFloat(complianceSum / e1.length).toFixed(2) : 0.00);
-
     return {
       type: itemType,
       name: itemName,
       entityCount: e1.length,
       active,
-      score:
-        complianceSum > 0.0
-          ? parseFloat(complianceSum / e1.length).toFixed(2)
-          : 0.0,
+      score,
+      band,
     };
   }
 
@@ -326,122 +331,8 @@ class Entities extends React.Component {
               return a.account.id - b.account.id;
             })}
           />
+          <EntityTable entities={filteredEntities} />
         </div>
-
-        <Grid>
-          <GridItem className="primary-content-container" columnSpan={12}>
-            {' '}
-            {/* sapcing */}
-            <Spacing type={[Spacing.TYPE.SMALL]}>
-              <div style={{ maringTop: '1px' }} />
-            </Spacing>
-          </GridItem>
-          <GridItem className="primary-content-container" columnSpan={12}>
-            {' '}
-            {/* table heading */}
-            <>
-              <table
-                style={{
-                  width: '99%',
-                  // border: "2px",
-                  backgroundColor: 'gray',
-                  marginLeft: '8px',
-                }}
-              >
-                <thead>
-                  <tr>
-                    <th
-                      style={{
-                        width: '10%',
-                        textAlign: 'center',
-                        border: '3px solid black',
-                        backgroundColor: 'gray',
-                      }}
-                    >
-                      <HeadingText
-                        style={{ headerStyle }}
-                        type={HeadingText.TYPE.HEADING_3}
-                      >
-                        <strong>Account ID</strong>
-                      </HeadingText>
-                    </th>
-                    <th
-                      style={{
-                        width: '8%',
-                        textAlign: 'center',
-                        border: '3px solid black',
-                        backgroundColor: 'gray',
-                      }}
-                    >
-                      <HeadingText
-                        style={{ headerStyle }}
-                        type={HeadingText.TYPE.HEADING_3}
-                      >
-                        <strong>Type</strong>
-                      </HeadingText>
-                    </th>
-                    <th
-                      style={{
-                        width: '16%',
-                        textAlign: 'center',
-                        border: '3px solid black',
-                        backgroundColor: 'gray',
-                      }}
-                    >
-                      <HeadingText
-                        style={{ headerStyle }}
-                        type={HeadingText.TYPE.HEADING_3}
-                      >
-                        <strong>Name</strong>
-                      </HeadingText>
-                    </th>
-                    <th
-                      style={{
-                        width: '4%',
-                        textAlign: 'center',
-                        border: '3px solid black',
-                        backgroundColor: 'gray',
-                      }}
-                    >
-                      <HeadingText
-                        style={{ headerStyle }}
-                        type={HeadingText.TYPE.HEADING_3}
-                      >
-                        <strong>Score</strong>
-                      </HeadingText>
-                    </th>
-                    <th
-                      style={{
-                        width: '60%',
-                        textAlign: 'center',
-                        border: '3px solid black',
-                        backgroundColor: 'gray',
-                      }}
-                    >
-                      <HeadingText
-                        style={{ headerStyle }}
-                        type={HeadingText.TYPE.HEADING_3}
-                      >
-                        <strong>Entity Tags</strong>
-                      </HeadingText>
-                    </th>
-                  </tr>
-                </thead>
-              </table>
-            </>
-          </GridItem>
-          <GridItem
-            className="primary-content-container"
-            columnSpan={12}
-            style={{ overflow: 'scroll' }}
-          >
-            {' '}
-            {/* entities */}
-            {filteredEntities.map((entity) => (
-              <Entity key={entity.guid} entity={entity} />
-            ))}
-          </GridItem>
-        </Grid>
       </div>
     );
   }
@@ -449,6 +340,6 @@ class Entities extends React.Component {
 
 Entities.propTypes = {
   tagHierarchy: PropTypes.object.isRequired,
-}
+};
 
 export default Entities;

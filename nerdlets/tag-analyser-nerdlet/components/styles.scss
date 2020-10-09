@@ -2,54 +2,15 @@
 
 .score__container {
   @include baseContainer;
+  height: 0;
+  min-height: 10rem;
 }
 
 .score__panel {
   @include defaultPanel;
+  height: 100%;
 }
 
 .table__container {
   @include baseContainer;
-}
-
-
-.split {
-    width: 99%;
-    // height: 100%;
-    display: flex;
-    flex-direction: row;
-    text-align: center;
-}
-
-.left {
-    width: 40%;
-    // height: 660px;
-    text-align: left;
-    // overflow-y: scroll;
-    margin: 10px;
- 
-  }
-.right {
-    width: 60%;
-    // height: 650px;
-    text-align: left;
-    margin: 10px;
-}
-
-.Entity {
-    width: 80%;
-    border: 1px solid #eee;
-    box-shadow: 0 2px 3px #ccc;
-    padding: 10px;
-    margin: 10px auto;
-    box-sizing: border-box;
-}
-
-.complianceScoreBox {
-    border: "3px solid black";
-    border-radius: "10px";
-    padding: "5px 5px";
-    margin: "5px";
-    font-size: "16px";
-    text-align: "center";
 }
