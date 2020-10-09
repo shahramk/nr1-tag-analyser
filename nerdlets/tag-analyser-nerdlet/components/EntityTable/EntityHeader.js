@@ -9,8 +9,9 @@ const EntityHeader = ({ filter, count, accounts, entityType, entities }) => {
     <div className="entity__table__header__panel">
       <div className="entity__table__header__message">
         {`Showing ${count}${
-          entityType !== 'None' ? ` ${entityType} ` : ''
-        } entities ${!accounts ? '' : `for account(s) ${accounts}`} `}
+          entityType !== 'None' ? ` ${entityType} ` : ''} 
+          ${count > 1 ? 'entities' : 'entity'} 
+          ${!accounts ? '' : `for account(s) ${accounts}`} `}
       </div>
       <div className="button__row">
         <Button

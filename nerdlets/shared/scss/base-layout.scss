@@ -25,9 +25,16 @@
 
 .button__row {
   margin: 1rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 40%;
 
-  button + button {
-    margin-left: .5rem;
+  button {
+    margin-top: .3rem;
+  }
+
+  button:not(:last-child) {
+    margin-right: .3rem;
   }
 }
 
