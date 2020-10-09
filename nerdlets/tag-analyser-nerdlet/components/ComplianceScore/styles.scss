@@ -12,7 +12,6 @@
   justify-self: center;
   height: 7rem;
   width: 14rem;
-  background-color: white;
   border-radius: 2px;
   border-right: 1px solid #edeeee;
   border-bottom: 1px solid #edeeee;
@@ -55,21 +54,6 @@
     text-align: left;
     font-weight: 600;
   }
-}
-
-.low__band {
-  color: rgb(191, 0, 22);
-  background-color: rgba(191, 0, 22, 0.05);
-}
-
-.mid__band {
-  color: rgb(241, 206, 80);
-  background-color: rgba(241, 206, 80, 0.1);
-}
-
-.high__band {
-  color: rgb(17, 166, 0);
-  background-color: rgba(17, 166, 0, 0.05);
 }
 
 .inactive__entity {

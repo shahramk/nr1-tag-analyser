@@ -1,23 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { complianceBands } from '../../utils/tag-schema';
-
 const ComplianceScore = ({ compliance, select }) => {
-  const { type, name, score, active, entityCount } = compliance;
-
-  const getComplianceBand = () => {
-    if (score >= complianceBands.highBand.lowerLimit) return 'high__band';
-    else if (
-      complianceBands.midBand.lowerLimit <= score &&
-      score < complianceBands.midBand.upperLimit
-    )
-      return 'mid__band';
-    else return 'low__band';
-  };
+  const { type, name, score, band, active, entityCount } = compliance;
 
   const title = type === 'account' ? 'OVERALL' : name;
-  const band = getComplianceBand();
   const status = !active ? 'inactive__entity' : band;
 
   return (

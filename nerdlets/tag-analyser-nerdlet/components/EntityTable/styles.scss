@@ -19,3 +19,31 @@
   font-size: 1.3rem;
   margin-bottom: .5rem;
 }
+
+.entity__table__panel {
+  @include defaultPanel;
+
+  .score {
+    font-weight: 600;
+  }
+}
+
+.tags__title {
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.tags__list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.tags__tag {
+  border: 1px solid #e3e4e4;
+  box-shadow: 0 1px 3px 0 rgba(203, 226, 226, 0.34);
+  font-size: .75rem;
+  padding: .15rem .25rem;
+  margin-left: .25rem;
+  margin-bottom: .25rem;
+}
