@@ -128,9 +128,19 @@ export default class Template extends React.Component {
                 this.setState({
                     templateEditMode: "add",
                     templateScope: "global",
-                    currentTemplate: null,
+                    currentTemplate: {
+                        id: -1,
+                        name: '',
+                        scope: 'global',
+                        enabled: true,
+                        createdDate: getDate(),
+                        lastUpdatedDate: getDate(),
+                        lastUpdatedBy: this.props.props.user.email,
+                        accounts: [],
+                        tags: [],
+                    },
                 });
-                this.templateNameInputRef.current.focus();
+                // this.templateNameInputRef.current.focus();
                 break;
     
             case 'editTemplate':
@@ -219,7 +229,7 @@ export default class Template extends React.Component {
                                 });
                             }
                             else if (templateEditMode === "add") {
-                                currentTemplate.id = this.props.templateList.reduce((max, current) => current.id > max ? current.id : max, this.props.templateList[0].id),
+                                currentTemplate.id = this.props.templateList.reduce((max, current) => current.id > max ? current.id : max, this.props.templateList[0].id)+1,
                                 currentTemplate.createdDate = getDate();
                                 currentTemplate.lastUpdatedDate = getDate();
                                 currentTemplate.lastUpdatedBy = this.props.props.user.email;
