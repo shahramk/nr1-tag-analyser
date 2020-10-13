@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 
-import { setComplianceColor, tagOutput, tagStyle } from "../utils/tag-schema";
+import { setComplianceColor, tagOutput, tagStyle } from "../../shared/utils/tag-schema";
 
 class Entity extends Component {
 

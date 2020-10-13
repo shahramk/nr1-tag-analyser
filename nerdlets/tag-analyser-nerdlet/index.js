@@ -2,23 +2,39 @@ import React from "react";
 import { Icon, HeadingText, NerdGraphQuery, Spinner } from "nr1";
 
 import Entities from "./components/Entities";
-import { entityTypes, mandatoryTagRules, optionalTagRules } from "./utils/tag-schema"; // SK
 
-import { Dropdown, Checkbox } from 'semantic-ui-react';
+import { 
+  entityTypes, 
+  mandatoryTagRules, 
+  optionalTagRules, 
+  complianceBands,
+} from "../shared/utils/tag-schema"; // SK
+import { 
+  getAccountCollection, 
+  getDate, 
+  writeAccountDocument,
+} from "../shared/utils/helpers"; // SK
 
-export default class TagVisualizer extends React.Component {
+
+export default class TagAnalyser extends React.Component {
   state = {
+    userAccount: 192626,
+    user: {},
+    nerdStoreCollection: "tagAnalyserCollection",
+    nerdStoreDocument: "tagAnalyserDocument",
     tagHierarchy: {
       entities: [],
       accounts: {}, // SK -- {},
       entityTypes: {},
-      accountsList: [],
+      accountList: [],
     },
     entityCount: 0,
     loadedEntities: 0,
     doneLoading: false,
     loadError: undefined,
     queryCursor: undefined,
+
+    nerdStoreConfigData: {},
  };
 
   static config = {
@@ -29,6 +45,7 @@ export default class TagVisualizer extends React.Component {
   };
 
   componentDidMount() {
+
     this.startLoadingEntityTags();
   }
 
@@ -59,7 +76,12 @@ export default class TagVisualizer extends React.Component {
             entityCount={entityCount}
             loadedEntities={loadedEntities}
             doneLoading={doneLoading}
-            mandatoryTags={this.state.mandatoryTags}
+            user={this.state.user}
+            userAccount={this.state.userAccount}
+
+            nerdStoreCollection={this.state.nerdStoreCollection}
+            nerdStoreDocument={this.state.nerdStoreDocument}
+            nerdStoreConfigData={this.state.nerdStoreConfigData}
           />
         
       </>
@@ -72,17 +94,20 @@ export default class TagVisualizer extends React.Component {
 
     this.setState(
       {
+        user: {},
         tagHierarchy: {
           entities: [],
           accounts: {}, // SK -- {},
           entityTypes: {},
-          accountsList: [],
+          accountList: [],
         },
         entityCount: 0,
         loadedEntities: 0,
         doneLoading: false,
         loadError: undefined,
         queryCursor: undefined,
+
+        nerdStoreConfigData: {},
       },
       () => {
         loadEntityBatch();
@@ -99,6 +124,15 @@ export default class TagVisualizer extends React.Component {
     const query = `
     query EntitiesSearchQuery($queryString: String!, $nextCursor: String) {
       actor {
+        user {
+          email
+          id
+          name
+        }
+        accounts {
+          id
+          name
+        }
         entitySearch(query: $queryString) {
           count
           results(cursor: $nextCursor) {
@@ -155,10 +189,12 @@ export default class TagVisualizer extends React.Component {
       state: { loadedEntities, tagHierarchy },
     } = this;
 
+    let user = {};
     let entityCount = 0;
     let entities = [];
     let nextCursor = undefined;
     try {
+      user = data.actor.user || {};
       entityCount = data.actor.entitySearch.count;
       entities = data.actor.entitySearch.results.entities || [];
       nextCursor = data.actor.entitySearch.results.nextCursor || undefined;
@@ -173,11 +209,15 @@ export default class TagVisualizer extends React.Component {
         entityCount,
         loadedEntities: loadedEntities + entities.length,
         doneLoading: !nextCursor,
+        user,
       },
       () => {
         if (nextCursor) {
           loadEntityBatch();
         }
+        // else {
+        //   this.getNerdStoreConfigData();
+        // }
       }
     );
   };
@@ -217,9 +257,13 @@ export default class TagVisualizer extends React.Component {
       if (!tagHierarchy.accounts[acctId]) tagHierarchy.accounts[acctId] = []
       tagHierarchy.accounts[acctId].push(entity.guid)
 
-      if ( typeof(tagHierarchy.accountsList.find(item => item.id === acctId)) === "undefined" ) {
-        // tagHierarchy.accountsList.push( JSON.parse( `{ "${acctId}": "${entity.account.name}"}` ));
-        tagHierarchy.accountsList.push( {id: acctId, name: entity.account.name} );
+      if ( typeof(tagHierarchy.accountList.find(item => item.id.toString() === acctId)) === "undefined" ) {
+        tagHierarchy.accountList.push({
+          id: entity.account.id,
+          key: tagHierarchy.accountList.length, 
+          value: `${entity.account.id}: ${entity.account.name}`, 
+          text: entity.account.name,
+        });
       }
 
       
@@ -231,5 +275,83 @@ export default class TagVisualizer extends React.Component {
 
     return tagHierarchy;
   };
+
+  
+  getNerdStoreConfigData = async () => {
+    const nerdStoreConfigData = await this.nerdStore("read", null); // read template config from nerdstore
+    console.log(nerdStoreConfigData);
+
+    if (nerdStoreConfigData.templates && nerdStoreConfigData.templates.length === 0) {
+      // build defaults from graphql data
+
+      const configData = {
+        templates: [
+          {
+            id: 0,
+            name: 'Default Template',
+            scope: 'global',
+            enabled: true,
+            createdDate: getDate(),
+            lastUpdatedDate: getDate(),
+            lastUpdatedBy: this.state.user.email,
+            accounts: this.getAccountList() || [],
+            tags: [],
+          }
+        ],
+        complianceBands: complianceBands,
+        entityTypes: this.getEntityTypeList() || [],
+      }
+
+      await this.nerdStore("write", configData);
+      this.setState({ nerdStoreConfigData: configData });
+    }
+    else {
+      this.setState({ nerdStoreConfigData: nerdStoreConfigData });
+    }
+  }
+
+  getAccountList = () => {
+     return this.state.tagHierarchy.accountList;
+  }
+
+  getEntityTypeList = () => {
+    const entityTypes = [];
+    Object.keys(this.state.tagHierarchy.entityTypes).forEach(entityType => { entityTypes.push(entityType) });
+    return entityTypes;
+  }
+
+  async nerdStore(mode, nerdStoreData) {
+    let result = null;
+    if (mode === "write") {
+      console.log(">>> writing to nerdstore");
+      result = await writeAccountDocument(
+        this.state.userAccount,
+        this.state.nerdStoreCollection,
+        this.state.nerdStoreDocument,
+        nerdStoreData
+      );
+    } else { // mode = "read"
+      console.log(">>> reading nerdstore");
+      result = await getAccountCollection(
+        this.state.userAccount,
+        this.state.nerdStoreCollection,
+        this.state.nerdStoreDocument,
+      );
+
+      console.log(">>>", result);
+      if (!result || !result.template || typeof(result.templates) === "undefined") {
+        console.log(mode, "empty result");
+        return {
+          templates: [],
+          complianceBands: [],
+          entityTypes: [],
+        };
+      }
+      else {
+        console.log(mode, "result returned");
+        return result;
+      }
+    }
+  }
 
 }

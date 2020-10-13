@@ -1,7 +1,7 @@
 import React from "react";
 import { Page, Text, View, Document, StyleSheet, Image } from "@react-pdf/renderer";
 
-import { setComplianceColor , setTagComplianceColor, tagOutput } from "../utils/tag-schema";
+import { setComplianceColor , setTagComplianceColor, tagOutput } from "../../shared//utils/tag-schema";
 
 
 const styles = StyleSheet.create({

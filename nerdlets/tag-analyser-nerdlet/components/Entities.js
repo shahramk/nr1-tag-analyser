@@ -1,16 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Stack, StackItem } from 'nr1';
+import { Spinner, Stack, StackItem, navigation, NerdletStateContext } from 'nr1';
 
-import { complianceBands } from '../utils/tag-schema';
+import { complianceBands } from '../../shared/utils/tag-schema';
 import MenuBar from './MenuBar/MenuBar';
 import ComplianceScore from './ComplianceScore/ComplianceScore';
 import EntityHeader from './EntityTable/EntityHeader';
 import EntityTable from './EntityTable/EntityTable';
+// import Configuration from "../../config"
+import { getAccountCollection, writeAccountDocument, getDate } from "../../shared/utils/helpers"
 
 class Entities extends React.Component {
   state = {
+    loading: true,
     entities: this.props.tagHierarchy.entities,
     filteredEntities: this.props.tagHierarchy.entities,
     displayFilter: 'FULL',
@@ -22,9 +25,26 @@ class Entities extends React.Component {
     },
   };
 
-  componentWillMount() {
+  constructor(props) {
+    super(props);
+
+    this.userAccount = this.props.userAccount;
+    this.user = this.props.user;
+    this.nerdStoreCollection = "tagAnalyserCollection";
+    this.nerdStoreDocument = "tagAnalyserDocument";
+    // this.nerdStoreConfigData = {};
+
+    this.updateStateBind = this.updateState.bind(this);
+  };
+
+  updateState = (prop) => {
+    console.log(prop);
+  }
+
+  componentDidMount() {
     const accountList = this.getAccountListMultiSelect();
     const domainList = this.getEntityTypeList();
+    // const nerdstoreConfigData = this.getNerdStoreConfigData(accountList, domainList);
 
     const complianceItemStatus = {};
     complianceItemStatus.global = true;
@@ -41,22 +61,46 @@ class Entities extends React.Component {
       disableButtons: false,
       accountList: accountList,
       complianceItemStatus: complianceItemStatus,
+      // nerdstoreConfigData: nerdstoreConfigData,
+      loading: false,
     });
   }
 
+  openConfigNerdlet = () => {
+    // console.log(">>> openConfigNerdlet -> ...");
+    navigation.openStackedNerdlet({
+      id: 'tag-analyser-config',
+      urlState: {
+        accounts: this.state.accountList,
+        nerdStoreCollection: this.nerdStoreCollection,
+        nerdStoreDocument: this.nerdStoreDocument,
+        nerdStoreConfigData: this.props.nerdStoreConfigData,
+        props: this.props,
+        // templateList: __TEMPLATE_LIST_FROM_NERDSTORE__
+        // tagHierarchy: this.props.tagHierarchy,
+        // user: this.props.user,
+        // userAccount: this.userAccount,
+      },
+
+      // urlState: { props: this.props, state: this.state },
+      // urlState: { accountId, user, session, views, scope },
+      // // state: { props: props, row: row, 'regionCode': 'OR', 'countryCode': 'US', 'series': null }
+    });
+  }
+  
   getAccountListMultiSelect() {
     const {
-      tagHierarchy: { accountsList },
+      tagHierarchy: { accountList },
     } = this.props;
-    const accountList = [];
+    // const accountList = [];
 
-    accountsList.forEach((account) => {
-      accountList.push({
-        key: accountList.length,
-        value: `${account.id}: ${account.name}`,
-        text: account.name,
-      });
-    });
+    // accountList.forEach((account) => {
+    //   accountList.push({
+    //     key: accountList.length,
+    //     value: `${account.id}: ${account.name}`,
+    //     text: account.name,
+    //   });
+    // });
     return accountList;
   }
 
@@ -286,15 +330,18 @@ class Entities extends React.Component {
 
   render() {
     const {
+      loading,
       entities,
       filteredEntities,
       accountList,
       selectedAccounts,
     } = this.state;
 
-    return (
+    return (loading ?
+        <Spinner />
+      :
       <div className="container">
-        <MenuBar accounts={accountList} change={this.onSelectAccount} />
+        <MenuBar accounts={accountList} change={this.onSelectAccount} openConfigNerdlet={this.openConfigNerdlet} />
 
         <div className="score__container">
           <div className="score__panel">
@@ -340,6 +387,17 @@ class Entities extends React.Component {
 
 Entities.propTypes = {
   tagHierarchy: PropTypes.object.isRequired,
+
+  // ### SK -
+  entityCount: PropTypes.number.isRequired,
+  loadedEntities: PropTypes.number.isRequired,
+  doneLoading: PropTypes.bool.isRequired,
+  user: PropTypes.object.isRequired,
+  userAccount: PropTypes.number.isRequired,
+  nerdStoreCollection: PropTypes.string.isRequired,
+  nerdStoreDocument: PropTypes.string.isRequired,
+  nerdStoreConfigData: PropTypes.object.isRequired,
+
 };
 
 export default Entities;
