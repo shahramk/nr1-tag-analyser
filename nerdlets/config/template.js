@@ -37,7 +37,7 @@ export default class Template extends React.Component {
         };
         this.newTemplate = {
           id: -1,
-          name: 'template-global',
+          name: '',
           scope: 'global',
           enabled: true,
           createdDate: '2020/10/08 15:18:56',
@@ -51,7 +51,6 @@ export default class Template extends React.Component {
     };
   
     state = {
-      // value: null,
       templateScope: 'global',
       templateList: this.props.templateList,
       selectedTemplate: null,
@@ -148,7 +147,7 @@ export default class Template extends React.Component {
                 this.setState({
                     templateEditMode: "update",
                     templateScope: item.scope,
-                    currentTemplate: {...item},
+                    currentTemplate: Object.assign({}, item),
                 });
                 this.templateNameInputRef.current.focus();
                 break;
@@ -168,38 +167,44 @@ export default class Template extends React.Component {
                 break;
             
             case 'tagName':
-                this.newTag.name = data.value;
+                this.newTag['name'] = data.value;
                 break;
         
             case 'mandatoryTag':
-                this.newTag.mandatory = data.checked;
+                this.newTag['mandatory'] = data.checked;
                 break;
             
             case 'addTag': {
-                    if (this.newTag.name == "") {
+                    if (this.newTag && this.newTag.name == "") {
                         // display message and do not add tag
-                        alert("Tags with blank name are not allowed");
+                        alert("Tags with blank name are not allowed!");
                     }
                     else {
                         // check to make sure tag has proper non-duplicate name
                         const { currentTemplate } = this.state;
-                        let tagExists = false;
+                        console.log("before: this.props.templateList: ", this.props.templateList.find(t => t.name === currentTemplate.name));
+                        console.log("before: currentTemplate: ", currentTemplate);
+                        console.log("before: newTag: ", this.newTag)
+                                let tagExists = false;
                         if (currentTemplate.tags.length) {
-                            tagExists = currentTemplate.tags.find(tag => { tag[name] = this.newTag[name] });
+                            tagExists = currentTemplate.tags.find(tag => { tag['name'] === this.newTag['name'] });
                         }
 
                         if (tagExists) {
                             // show message and red box for 2 seconds and set focus to tagName field
+                            alert(`A tags with name: ${this.newTag.name} already exists in the template!`);
                         }
                         else {
-                            currentTemplate.tags.push(this.newTag);
+                            currentTemplate.tags.push( Object.assign({}, this.newTag) );
                             this.newTag = {
                                 name: "",
                                 mandatory: true,
                             };
                             this.setState({ currentTemplate })
                         }
-                    }
+                        console.log("after: currentTemplate: ", currentTemplate);
+                        console.log("after: newTag: ", this.newTag)
+                            }
                 }
                 break;
     
@@ -224,7 +229,7 @@ export default class Template extends React.Component {
                                 currentTemplate.lastUpdatedBy = this.props.props.user.email;
                                 this.props.templateList.forEach((template, index) => {
                                     if (template.id === currentTemplate.id) {
-                                        this.props.templateList[index] = currentTemplate;
+                                        this.props.templateList[index] = Object.assign({}, currentTemplate);
                                     }
                                 });
                             }
@@ -233,7 +238,7 @@ export default class Template extends React.Component {
                                 currentTemplate.createdDate = getDate();
                                 currentTemplate.lastUpdatedDate = getDate();
                                 currentTemplate.lastUpdatedBy = this.props.props.user.email;
-                                this.props.templateList.push(currentTemplate);
+                                this.props.templateList.push(Object.assign({}, currentTemplate));
                             }
                             
                             
@@ -636,6 +641,7 @@ export default class Template extends React.Component {
                             padding: '5px',
                             }}
                             // label="Tag Name"
+                            defaultValue={this.newTag.name}
                             placeholder="Enter tag..."
                             onChange={(event, data) =>
                                 this.handleClick(event, data, 'tagName')

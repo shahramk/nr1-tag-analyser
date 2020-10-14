@@ -17,8 +17,8 @@ const entityTypes = [
     { key: 'i', text: 'Infrastructure', value: 'INFRA' },
     { key: 'm', text: 'Mobile', value: 'MOBILE' },
     { key: 's', text: 'Synthetics', value: 'SYNTH' },
-    // { key: "s", text: "Dashboards", value: "Dashboards" },
-    // { key: "s", text: "Workloads", value: "Workloads" },
+    // { key: "d", text: "Dashboards", value: "Dashboards" },
+    // { key: "w", text: "Workloads", value: "Workloads" },
 ];
 
 const templates = [
@@ -149,181 +149,18 @@ const templates = [
 
 export default class Configuration extends React.Component {
 
-  constructor(props) {
-      super(props);
-
-      this.templateNameInputRef = React.createRef();
-      this.newTag = {
-          name: "",
-          mandatory: true,
-      };
-      this.newTemplate = {
-        id: -1,
-        name: 'template-global',
-        scope: 'global',
-        enabled: true,
-        createdDate: '2020/10/08 15:18:56',
-        lastUpdatedDate: '2020/10/08 15:18:56',
-        lastUpdatedBy: 'sk@newrelic.com',
-        accounts: [],
-        tags: [],
-        // complianceBands: complianceBands,
-        // entityTypes: [],
-      };
-  }
-
   state = {
-    // value: null,
-    templateScope: 'global',
     templateList: templates,
-    selectedTemplate: null,
-
-    templateEditMode: false,
-    currentTemplate: null,
-    currentTag: null,
-    templateEntryFormState: "hidden",
-    searchInputDisabled: false,
-    addTemplateButtonDisabled: false,
-    templateEnabledButtonDisabled: false,
-    templateEditButtonDisabled: false,
-    templateDeleteButtonDisabled: false,
-
+    complianceBands: complianceBands,
+    entityTypes: entityTypes,
 
     nerdStoreConfigData: {},
   };
 
-  handleDropdownChange = (event, data, type) => {
-    console.log(event, data, type);
-
-    switch (type) {
-      case 'accounts':
-        break;
-
-      case 'entities':
-        this.setState({ 
-            selectedEntities: data.value,
-        });
-        break;
-    }
-  };
-
-  handleRadio = (event, value) => {
-    console.log(event, value);
-    this.setState({ templateScope: value.value });
-  };
-
-  handleClick = (event, data, type, item) => {
-    console.log(event, data);
-
-    switch (type) {
-      case 'templateSearch':
-        this.setState({
-          templateList: templates.filter((t) =>
-            t.name.toLowerCase().includes(data.value.toLowerCase())
-          ),
-        });
-        break;
-
-      case 'templateName':
-        break;
-
-      case 'highBandMin':
-        break;
-
-      case 'midBandMin':
-        break;
-
-      case 'midBandMax':
-        break;
-
-      case 'lowBandMax':
-        break;
-
-      case 'addTemplate':
-        this.newTag = {
-            name: "",
-            mandatory: true,
-        };
-        this.setState({
-            templateEntryFormState: "visible",
-            searchInputDisabled: true,
-            addTemplateButtonDisabled: true,
-            templateEnabledButtonDisabled: true,
-            templateEditButtonDisabled: true,
-            templateDeleteButtonDisabled: true,
-        });
-        this.templateNameInputRef.current.focus();
-        break;
-
-        case 'editTemplate':
-            this.setState({
-                templateEditMode: true,
-                templateScope: item.scope,
-                templateEntryFormState: "visible",
-                searchInputDisabled: true,
-                addTemplateButtonDisabled: true,
-                templateEnabledButtonDisabled: true,
-                templateEditButtonDisabled: true,
-                templateDeleteButtonDisabled: true,
-
-                currentTemplate: item,
-            });
-            this.templateNameInputRef.current.focus();
-            break;
-    
-        case 'removeTemplate':
-            break;
-        
-        case 'tagName':
-            this.newTag[name] = data.value;
-            break;
-    
-        case 'addTag':
-            // // check to make sure tag has proper non-duplicate name
-            // const { currentTemplate } = this.state;
-            // let tagExists = false;
-            // if (currentTemplate.tags.length) {
-            //     tagExists = currentTemplate.tags.find(tag => { tag[name] = newTag[name] });
-            // }
-            // if (tagExists) {
-            //     // show message and red box for 2 seconds and set focus to tagName field
-            // }
-            // else {
-            //     currentTemplate.tags.push(newTag);
-            //     this.setState({ currentTemplate })
-            // }
-        
-            break;
-
-      case 'removeTag':
-        break;
-
-      case 'saveTemplate':
-        break;
-
-      case 'cancelTemplate':
-        this.newTag = {
-            name: "",
-            mandatory: true,
-        };
-        this.setState({
-            templateEntryFormState: "hidden",
-            searchInputDisabled: false,
-            addTemplateButtonDisabled: false,
-            templateEnabledButtonDisabled: false,
-            templateEditButtonDisabled: false,
-            templateDeleteButtonDisabled: false,
-          });
-
-        break;
-
-      default:
-      // do nothing for now
-    }
-  };
-
-  submitTemplateChange = () => {
-    //
+  updateState = (item) => {
+      this.setState({
+          item,
+      })
   }
 
   getNerdStoreConfigData = async () => {
@@ -435,19 +272,7 @@ export default class Configuration extends React.Component {
   }
 
   render() {
-    // const { value, templateScope, templateList } = this.state;
-    const { loading, templateScope, templateList, nerdStoreConfigData } = this.state;
-    const { 
-        templateEditMode,
-        currentTemplate,
-        newTag,
-        templateEntryFormState,
-        searchInputDisabled,
-        addTemplateButtonDisabled,
-        templateEnabledButtonDisabled, 
-        templateEditButtonDisabled,
-        templateDeleteButtonDisabled,
-    } = this.state;
+    const { loading, templateList, nerdStoreConfigData } = this.state;
 
     const { nerdletUrlState } = this.props;
 
@@ -464,17 +289,16 @@ export default class Configuration extends React.Component {
                     menuItem: 'Templates',
                     render: () => (
                     <Tab.Pane attached={false}>
-                            <Template
-                                accounts={nerdletUrlState.accounts}
-                                nerdStoreCollection={nerdletUrlState.nerdStoreCollection}
-                                nerdStoreDocument={nerdletUrlState.nerdStoreDocument}
-                                nerdStoreConfigData={this.state.nerdStoreConfigData} // {nerdletUrlState.nerdStoreConfigData}
-                                props={nerdletUrlState.props}
-                                templateList={this.state.templateList}
-                                // tagHierarchy={nerdletUrlState.tagHierarchy}
-                                // user={nerdletUrlState.user}
-                                // userAccount={nerdletUrlState.userAccount}
-                                />
+                        <Template
+                            updateParentState={this.updateState}
+                            templateList={this.state.templateList}
+                            accounts={nerdletUrlState.accounts}
+
+                            nerdStoreCollection={nerdletUrlState.nerdStoreCollection}
+                            nerdStoreDocument={nerdletUrlState.nerdStoreDocument}
+                            nerdStoreConfigData={this.state.nerdStoreConfigData} // {nerdletUrlState.nerdStoreConfigData}
+                            props={nerdletUrlState.props}
+                        />
                     </Tab.Pane>
                     ),
                 },
@@ -482,9 +306,9 @@ export default class Configuration extends React.Component {
                 menuItem: 'Entity Types',
                 render: () => (
                     <Tab.Pane attached={false}>
-                        <EntityTypes 
-                            handleClick={this.handleClick} 
-                            handleDropdownChange={this.handleDropdownChange}
+                        <EntityTypes
+                            entityTypes={this.state.entityTypes}
+                            updateParentState={this.updateState}
                         />
                     </Tab.Pane>
                 ),
@@ -493,9 +317,9 @@ export default class Configuration extends React.Component {
                 menuItem: 'Compliance Bands',
                 render: () => (
                     <Tab.Pane attached={false}>
-                        <ComplianceBands 
-                            onClick={this.handleClick} 
-                            onDropdownChange={this.handleDropdownChange}
+                        <ComplianceBands
+                            complianceBands={this.state.complianceBands}
+                            updateParentState={this.updateState}
                         />
                     </Tab.Pane>
                 ),

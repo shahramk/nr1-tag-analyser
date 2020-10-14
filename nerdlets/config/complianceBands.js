@@ -1,50 +1,56 @@
 import React from "react";
 import PropTypes from 'prop-types';
-import { Icon, Input, Label, Button, Grid, } from "semantic-ui-react";
+import { Icon, Input, Label, Button, Grid } from "semantic-ui-react";
 
 export default class ComplianceBands extends React.Component {
     static propTypes = {
-        handleDropdownChange: PropTypes.func,
-        handleClick: PropTypes.func,
+        complianceBands: PropTypes.object.isRequired,
+        updateParentState: PropTypes.func.isRequired,
     }
 
     state = {
-        value: null,
-        selectedTemplate: null,
+        complianceBands: this.props.complianceBands,
     }
 
-    // handleClick = (event, data, type) => {
-    //     console.log(event, data);
+    handleClick = (event, data, type) => {
+        console.log(event, data, type);
 
-    //     switch (type) {
-    //         case "highBandMin":
+        const { complianceBands } = this.state;
+        switch (type) {
+            case "highBandMin":
+                complianceBands.highBand.lowerLimit = parseFloat(data.value).toFixed(2);
+                this.setState({ complianceBands });
+                break;
 
-    //             break;
+            case "midBandMin":
+                complianceBands.midBand.lowerLimit = parseFloat(data.value).toFixed(2);
+                this.setState({ complianceBands });
+                break;
 
-    //         case "midBandMin":
+            case "midBandMax":
+                complianceBands.midBand.upperLimit = parseFloat(data.value).toFixed(2);
+                this.setState({ complianceBands });
+                break;
 
-    //             break;
+            case "lowBandMax":
+                complianceBands.lowBand.upperLimit = parseFloat(data.value).toFixed(2);
+                this.setState({ complianceBands });
+                break;
 
-    //         case "midBandMax":
+            case "saveComplianceBand":
+                this.props.updateParentState(complianceBands);
+                break;
 
-    //             break;
+            case "cancelComplianceBand":
+                // reset bands
+                this.setState({ complianceBands: this.props.complianceBands });
+                break;
 
-    //         case "lowBandMax":
-
-    //             break;
-
-    //         case "saveTemplate":
-
-    //             break;
-
-    //         case "cancelTemplate":
-
-    //             break;
-
-    //     }
-    // }
+        }
+    }
 
     render() {
+        const { complianceBands } = this.state;
 
         return (
             <Grid>
@@ -66,6 +72,7 @@ export default class ComplianceBands extends React.Component {
                         <label style={{padding: "20px"}}>High Band&nbsp;&nbsp;&nbsp;&gt;=&nbsp;&nbsp;</label>
                         <Input 
                             style={{width: "50px", border: "1px solid lightgrey", padding: "2px", textAlign: "right"}}
+                            defaultValue={complianceBands.highBand.lowerLimit}
                             onChange={(event, data) => this.handleClick(event, data, "highBandMin")}
                         />
                         <label>&nbsp;%</label>
@@ -76,11 +83,13 @@ export default class ComplianceBands extends React.Component {
                         <label style={{padding: "20px"}}>Medium Band&nbsp;&nbsp;&nbsp;</label>
                         <Input 
                             style={{width: "50px", border: "1px solid lightgrey", padding: "2px"}}
+                            defaultValue={complianceBands.midBand.lowerLimit}
                             onChange={(event, data) => this.handleClick(event, data, "midBandMin")}
                         />
                         <label>&nbsp;%&nbsp;&nbsp;to&nbsp;&nbsp;</label>
                         <Input 
                             style={{width: "50px", border: "1px solid lightgrey", padding: "2px"}}
+                            defaultValue={complianceBands.midBand.upperLimit}
                             onChange={(event, data) => this.handleClick(event, data, "midBandMax")}
                         />
                         <label>&nbsp;%</label>
@@ -91,6 +100,7 @@ export default class ComplianceBands extends React.Component {
                         <label style={{padding: "20px"}}>Low Band&nbsp;&nbsp;&nbsp;&lt;&nbsp;&nbsp;</label>
                         <Input 
                             style={{width: "50px", border: "1px solid lightgrey", padding: "2px"}}
+                            defaultValue={complianceBands.lowBand.upperLimit}
                             onChange={(event, data) => this.handleClick(event, data, "lowBandMax")}
                         />
                         <label>&nbsp;%</label>
@@ -101,14 +111,14 @@ export default class ComplianceBands extends React.Component {
                             <Button
                                 floated='right'
                                 color={"blue"}
-                                onClick={(event, data) => this.handleClick(event, data, "saveTemplate")}
+                                onClick={(event, data) => this.handleClick(event, data, "saveComplianceBand")}
                             >
                                 <Icon name="checkmark" /> Save
                             </Button>
                             <Button
                                 floated='right'
                                 color={"grey"}
-                                onClick={(event, data) => this.handleClick(event, data, "cancelTemplate")}
+                                onClick={(event, data) => this.handleClick(event, data, "cancelComplianceBand")}
                             >
                                 <Icon name="arrow alternate circle left outline" /> Cancel
                             </Button>

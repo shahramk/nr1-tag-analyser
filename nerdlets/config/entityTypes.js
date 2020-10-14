@@ -1,39 +1,39 @@
 import React from "react";
 import PropTypes from 'prop-types';
-import { Icon, Input, Label, List, Button, Grid, Dropdown } from "semantic-ui-react";
+import { Icon, List, Button, Grid, Dropdown } from "semantic-ui-react";
 
-const entityTypes = [
-    { key: "a", text: "Application", value: "APM" },
-    { key: "b", text: "Browser", value: "BROWSER" },
-    { key: "i", text: "Infrastructure", value: "INFRA" },
-    { key: "m", text: "Mobile", value: "MOBILE" },
-    { key: "s", text: "Synthetics", value: "SYNTH" },
-    // { key: "s", text: "Dashboards", value: "Dashboards" },
-    // { key: "s", text: "Workloads", value: "Workloads" },
-  ];
+// const entityTypes = [
+//     { key: "a", text: "Application", value: "APM" },
+//     { key: "b", text: "Browser", value: "BROWSER" },
+//     { key: "i", text: "Infrastructure", value: "INFRA" },
+//     { key: "m", text: "Mobile", value: "MOBILE" },
+//     { key: "s", text: "Synthetics", value: "SYNTH" },
+//     // { key: "s", text: "Dashboards", value: "Dashboards" },
+//     // { key: "s", text: "Workloads", value: "Workloads" },
+//   ];
 
 export default class EntityTypes extends React.Component {
     static propTypes = {
-        handleDropdownChange: PropTypes.func.Required,
-        handleClick: PropTypes.func,
+        entityTypes: PropTypes.array.isRequired,
+        updateParentState: PropTypes.func.isRequired,
     }
 
     state = {
-        value: null,
         selectedTemplate: null,
+        entityTypes: this.props.entityTypes,
         selectedEntities: ["APM", "INFRA"],
     };
 
     handleClick = (event, data, type) => {
-        console.log(event, data);
+        console.log(event, data, type);
 
         switch (type) {
-            case "saveTemplate":
-
+            case "saveEntities":
+                this.props.updateParentState(this.state.entityTypes);
                 break;
 
-            case "cancelTemplate":
-
+            case "cancelEntities":
+                this.setState({ entityTypes: this.props.entityTypes });
                 break;
     
         }
@@ -43,9 +43,6 @@ export default class EntityTypes extends React.Component {
         console.log(event, data, type);
 
         switch (type) {
-            case "accounts":
-                break;
-
             case "entities":
                 this.setState({ 
                     selectedEntities: data.value,
@@ -55,7 +52,7 @@ export default class EntityTypes extends React.Component {
     }
 
     render() {
-        const { selectedEntities } = this.state;
+        const { entityTypes, selectedEntities } = this.state;
         const { handleClick, handleDropdownChange } = this;
         return (
             <Grid>
@@ -94,6 +91,7 @@ export default class EntityTypes extends React.Component {
                             placeholder="Entity types..."
                             options={entityTypes}
                             // simple
+                            fluid
                             multiple
                             search
                             selection
@@ -110,14 +108,14 @@ export default class EntityTypes extends React.Component {
                             <Button
                                 floated='right'
                                 color={"blue"}
-                                onClick={(event, data) => handleClick(event, data, "saveTemplate")}
+                                onClick={(event, data) => handleClick(event, data, "saveEntities")}
                             >
                                 <Icon name="checkmark" /> Save
                             </Button>
                             <Button
                                 floated='right'
                                 color={"grey"}
-                                onClick={(event, data) => handleClick(event, data, "cancelTemplate")}
+                                onClick={(event, data) => handleClick(event, data, "cancelEntities")}
                             >
                                 <Icon name="arrow alternate circle left outline" /> Cancel
                             </Button>
