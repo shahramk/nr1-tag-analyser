@@ -10,6 +10,8 @@ import EntityHeader from './EntityTable/EntityHeader';
 import EntityTable from './EntityTable/EntityTable';
 // import Configuration from "../../config"
 import { getAccountCollection, writeAccountDocument, getDate } from "../../shared/utils/helpers"
+import Modal from './Modal/Modal';
+import Config from './Config/Config';
 
 class Entities extends React.Component {
   state = {
@@ -23,6 +25,7 @@ class Entities extends React.Component {
       global: true,
       entityType: [],
     },
+    showConfigModal: false,
   };
 
   constructor(props) {
@@ -66,28 +69,10 @@ class Entities extends React.Component {
     });
   }
 
-  openConfigNerdlet = () => {
-    // console.log(">>> openConfigNerdlet -> ...");
-    navigation.openStackedNerdlet({
-      id: 'tag-analyser-config',
-      urlState: {
-        accounts: this.state.accountList,
-        nerdStoreCollection: this.nerdStoreCollection,
-        nerdStoreDocument: this.nerdStoreDocument,
-        nerdStoreConfigData: this.props.nerdStoreConfigData,
-        props: this.props,
-        // templateList: __TEMPLATE_LIST_FROM_NERDSTORE__
-        // tagHierarchy: this.props.tagHierarchy,
-        // user: this.props.user,
-        // userAccount: this.userAccount,
-      },
+  openConfig = () => this.setState({ showConfigModal: true });
 
-      // urlState: { props: this.props, state: this.state },
-      // urlState: { accountId, user, session, views, scope },
-      // // state: { props: props, row: row, 'regionCode': 'OR', 'countryCode': 'US', 'series': null }
-    });
-  }
-  
+  closeConfig = () => this.setState({ showConfigModal: false });
+
   getAccountListMultiSelect() {
     const {
       tagHierarchy: { accountList },
@@ -322,7 +307,7 @@ class Entities extends React.Component {
 
     return (
       <ComplianceScore
-        key={itemName} 
+        key={itemName}
         select={this.onSelectEntityType}
         compliance={compliance} />
     );
@@ -335,13 +320,17 @@ class Entities extends React.Component {
       filteredEntities,
       accountList,
       selectedAccounts,
+      showConfigModal,
     } = this.state;
+    const { user, userAccount } = this.props;
+
+    const modalStyle = { width: '90%', height: '90%' };
 
     return (loading ?
         <Spinner />
       :
       <div className="container">
-        <MenuBar accounts={accountList} change={this.onSelectAccount} openConfigNerdlet={this.openConfigNerdlet} />
+        <MenuBar accounts={accountList} change={this.onSelectAccount} openConfig={this.openConfig} />
 
         <div className="score__container">
           <div className="score__panel">
@@ -380,6 +369,11 @@ class Entities extends React.Component {
           />
           <EntityTable entities={filteredEntities} />
         </div>
+        {showConfigModal ? (
+          <Modal style={modalStyle} onClose={this.closeConfig}>
+            <Config accounts={accountList} user={user} userAccount={userAccount} onUpdate={data => console.log(data)} />
+          </Modal>
+        ): null}
       </div>
     );
   }
