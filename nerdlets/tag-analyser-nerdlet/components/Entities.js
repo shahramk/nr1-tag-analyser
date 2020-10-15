@@ -381,17 +381,8 @@ class Entities extends React.Component {
 
 Entities.propTypes = {
   tagHierarchy: PropTypes.object.isRequired,
-
-  // ### SK -
-  entityCount: PropTypes.number.isRequired,
-  loadedEntities: PropTypes.number.isRequired,
-  doneLoading: PropTypes.bool.isRequired,
   user: PropTypes.object.isRequired,
   userAccount: PropTypes.number.isRequired,
-  nerdStoreCollection: PropTypes.string.isRequired,
-  nerdStoreDocument: PropTypes.string.isRequired,
-  nerdStoreConfigData: PropTypes.object.isRequired,
-
 };
 
 export default Entities;

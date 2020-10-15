@@ -73,15 +73,8 @@ export default class TagAnalyser extends React.Component {
         )}
           <Entities
             tagHierarchy={tagHierarchy}
-            entityCount={entityCount}
-            loadedEntities={loadedEntities}
-            doneLoading={doneLoading}
             user={this.state.user}
             userAccount={this.state.userAccount}
-
-            nerdStoreCollection={this.state.nerdStoreCollection}
-            nerdStoreDocument={this.state.nerdStoreDocument}
-            nerdStoreConfigData={this.state.nerdStoreConfigData}
           />
         
       </>
@@ -215,9 +208,6 @@ export default class TagAnalyser extends React.Component {
         if (nextCursor) {
           loadEntityBatch();
         }
-        // else {
-        //   this.getNerdStoreConfigData();
-        // }
       }
     );
   };
@@ -275,83 +265,5 @@ export default class TagAnalyser extends React.Component {
 
     return tagHierarchy;
   };
-
-  
-  getNerdStoreConfigData = async () => {
-    const nerdStoreConfigData = await this.nerdStore("read", null); // read template config from nerdstore
-    console.log(nerdStoreConfigData);
-
-    if (nerdStoreConfigData.templates && nerdStoreConfigData.templates.length === 0) {
-      // build defaults from graphql data
-
-      const configData = {
-        templates: [
-          {
-            id: 0,
-            name: 'Default Template',
-            scope: 'global',
-            enabled: true,
-            createdDate: getDate(),
-            lastUpdatedDate: getDate(),
-            lastUpdatedBy: this.state.user.email,
-            accounts: this.getAccountList() || [],
-            tags: [],
-          }
-        ],
-        complianceBands: complianceBands,
-        entityTypes: this.getEntityTypeList() || [],
-      }
-
-      await this.nerdStore("write", configData);
-      this.setState({ nerdStoreConfigData: configData });
-    }
-    else {
-      this.setState({ nerdStoreConfigData: nerdStoreConfigData });
-    }
-  }
-
-  getAccountList = () => {
-     return this.state.tagHierarchy.accountList;
-  }
-
-  getEntityTypeList = () => {
-    const entityTypes = [];
-    Object.keys(this.state.tagHierarchy.entityTypes).forEach(entityType => { entityTypes.push(entityType) });
-    return entityTypes;
-  }
-
-  async nerdStore(mode, nerdStoreData) {
-    let result = null;
-    if (mode === "write") {
-      console.log(">>> writing to nerdstore");
-      result = await writeAccountDocument(
-        this.state.userAccount,
-        this.state.nerdStoreCollection,
-        this.state.nerdStoreDocument,
-        nerdStoreData
-      );
-    } else { // mode = "read"
-      console.log(">>> reading nerdstore");
-      result = await getAccountCollection(
-        this.state.userAccount,
-        this.state.nerdStoreCollection,
-        this.state.nerdStoreDocument,
-      );
-
-      console.log(">>>", result);
-      if (!result || !result.template || typeof(result.templates) === "undefined") {
-        console.log(mode, "empty result");
-        return {
-          templates: [],
-          complianceBands: [],
-          entityTypes: [],
-        };
-      }
-      else {
-        console.log(mode, "result returned");
-        return result;
-      }
-    }
-  }
 
 }
