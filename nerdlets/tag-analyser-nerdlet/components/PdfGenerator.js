@@ -1,76 +1,59 @@
+/* eslint-disable no-nested-ternary */
 import React from 'react';
 
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import { PdfDocument } from "./PdfDocument";
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { PdfDocument } from './PdfDocument';
 
-import { Button } from "nr1";
-
+import { Button } from 'nr1';
 
 export default class PdfGenerator extends React.Component {
+  state = {
+    pdfIsReady: false,
+    preparing: false,
+  };
 
-    state = {
-        pdfIsReady: false,
-        disableDownload: true,
-    };
+  onGenerate = () => {
+    this.setState({ pdfIsReady: true, preparing: true })
+  }
 
-    toggle() {
-        this.setState((prevState) => ({
-          pdfIsReady: false
-        }), () => {
-            setTimeout(() => {
-                this.setState({ pdfIsReady: true });
-            }, 100);
-        });
-    }
-
-    componentDidMount() {
-        this.setState( { disableDownload: false })
-
-    }
-
-    render() {
-        const { pdfIsReady, disableDownload } = this.state;
-        const data = this.props;
-
-        return (
-            pdfIsReady ? (
-            <PDFDownloadLink
-                document={<PdfDocument data={data.data} accounts={data.accounts} filters={data.filters} />}
-                fileName="document.pdf"
-                style={{
-                    textDecoration: "none",
-                    padding: "10px",
-                    color: "#4a4a4a",
-                    backgroundColor: "#f2f2f2",
-                    border: "1px solid #4a4a4a"
-                }}
+  render() {
+    const { pdfIsReady, preparing } = this.state;
+    const { preparingPdf, pdfComplete } = this.props;
+    const data = this.props;
+    
+    //pdfIsReady ? 
+    return (
+      <PDFDownloadLink
+        document={
+          <PdfDocument
+            data={data.data}
+            accounts={data.accounts}
+            filters={data.filters}
+          />
+        }
+        fileName="nr_tags_report.pdf"
+      >
+        {({ blob, url, loading, error }) =>
+          loading ? (
+            <Button
+              disabled
+              type={Button.TYPE.PLAIN_NEUTRAL}
+              iconType={Button.ICON_TYPE.DATE_AND_TIME__DATE_AND_TIME__TIME}
+              sizeType={Button.SIZE_TYPE.SMALL}
             >
-                {({ blob, url, loading, error }) =>
-                loading ? "Loading Document..." :
-                <Button 
-                disabled={disableDownload}
-                onClick={() => (this.setState({ pdfIsReady: false }))}
-                type={Button.TYPE.PRIMARY}
-                iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__DOWNLOAD}
-                sizeType={Button.SIZE_TYPE.SMALL}
-                >
-                Download
-                </Button>
-                }
-            </PDFDownloadLink>
-            ) : (
-            <Button 
-                disabled={disableDownload}
-                onClick={() => this.toggle()}
-                type={Button.TYPE.NORMAL}
-                iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__DOWNLOAD}
-                sizeType={Button.SIZE_TYPE.SMALL}
-            >
-                Prepare pdf
+              Preparing
             </Button>
-            )
-
-
-        )
-    }
+          ) : (
+            <Button
+              onClick={pdfComplete}
+              type={Button.TYPE.PRIMARY}
+              iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__DOWNLOAD}
+              sizeType={Button.SIZE_TYPE.SMALL}
+            >
+              Download
+            </Button>
+          )
+        }
+      </PDFDownloadLink>
+  )}
 }

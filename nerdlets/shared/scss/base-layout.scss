@@ -1,3 +1,6 @@
+$high-band-color: rgb(17, 166, 0);
+$mid-band-color: rgb(232, 183, 12);
+$low-band-color: rgb(191, 0, 22);
 
 @mixin defaultPanel {
   background-color: #fff;
@@ -25,23 +28,30 @@
 
 .button__row {
   margin: 1rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 40%;
 
-  button + button {
-    margin-left: .5rem;
+  button {
+    margin-top: .3rem;
+  }
+
+  button:not(:last-child) {
+    margin-right: .3rem;
   }
 }
 
 .low__band {
-  color: rgb(191, 0, 22);
+  color: $low-band-color;
   background-color: rgba(191, 0, 22, 0.05);
 }
 
 .mid__band {
-  color: rgb(232, 183, 12);
+  color: $mid-band-color;
   background-color: rgba(241, 206, 80, 0.06);
 }
 
 .high__band {
-  color: rgb(17, 166, 0);
+  color: $high-band-color;
   background-color: rgba(17, 166, 0, 0.05);
 }

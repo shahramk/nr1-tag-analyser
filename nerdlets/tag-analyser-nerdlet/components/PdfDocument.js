@@ -1,189 +1,275 @@
-import React from "react";
-import { Page, Text, View, Document, StyleSheet, Image } from "@react-pdf/renderer";
+import React from 'react';
+import PropTypes from 'prop-types';
+import {
+  Page,
+  Text,
+  View,
+  Document,
+  StyleSheet,
+  Font,
+} from '@react-pdf/renderer';
 
-import { setComplianceColor , setTagComplianceColor, tagOutput } from "../../shared//utils/tag-schema";
-
-
-const styles = StyleSheet.create({
-  page: {
-    backgroundColor: "#ffffff"
-  },
-  pageNumbers: {
-    position: 'absolute',
-    bottom: 20,
-    left: 0,
-    right: 0,
-    fontSize: 12,
-    textAlign: 'center',
-  },
-
-  item: {
-    flexDirection: 'row',
-    // marginBottom: 5,
-  },
-  image: {
-    width: 10, 
-    height: 10, 
-    verticalAlign: "center",
-  },
-
-  bulletPoint: {
-    width: 10,
-    fontSize: 12,
-    paddingLeft: 10,
-  },
-  itemContent: {
-    flex: 1,
-    fontSize: 10,
-    // fontFamily: 'Lato',
-    paddingLeft: 10,
-  },
-  // Amit -------------------------
-  row: { 
-    display: 'flex',
-    flexDirection: 'row',
-    flexGrow: 0,
-    flexWrap: 'wrap',
-    width: '100%',
-    paddingLeft: '15px',
-    paddingRight: '15px'
-  },
-  col: {
-    flexGrow: 1,
-    textOverflow: 'ellipsis',
-    paddingRight: '20px',
-    // width: '25%'
-  },
-  // Amit =======================================
-  // Amit =======================================
-
-  splitScreen: {
-    width: '90%',
-    position: 'flex',
-    margin: 'auto',
-  },
-  leftSide: {
-    position: 'flex',
-    width: '49%',
-    border: '1 solid black',
-    left: 0,
-    textOverflow: 'ellipsis',
-  },
-  rightSide: {
-    position: 'absolute',
-    width: '49%',
-    border: '1 solid black',
-    right: 0,
-    textOverflow: 'ellipsis',
-  },
-});
+import { setComplianceColor } from '../utils/tag-schema';
 
 export function PdfDocument(props) {
-    // props.data === current active entities in the UI
-    console.log("pdf props", props.data);
-    const tagMinHeight = Math.max(props.data[0].mandatoryTags.length, props.data[0].optionalTags.length) * 18; // height in pixels
+  Font.register({
+    family: 'Oswald',
+    src: 'https://fonts.gstatic.com/s/oswald/v13/Y_TKV6o8WovbUd3m_X9aAA.ttf',
+  });
 
-    return (
-        <Document>
-          <Page style={styles.page}>
-            <View style={styles.pageNumber} fixed>
-              <Text render={({ pageNumber, totalPages }) => (`${pageNumber} / ${totalPages}`)} fixed/>
-            </View>
+  const styles = StyleSheet.create({
+    page: {
+      backgroundColor: '#ffffff',
+      padding: 20,
+      fontFamily: 'Oswald',
+    },
+    pageNumber: {
+      position: 'absolute',
+      fontSize: 8,
+      bottom: 10,
+      left: 0,
+      right: 10,
+      textAlign: 'right',
+      color: 'grey',
+    },
+    header: {
+      fontSize: 15,
+      paddingTop: 5,
+      paddingBottom: 1,
+      textAlign: 'left',
+    },
+    subheader: {
+      fontSize: 6,
+      paddingBottom: 10,
+      textAlign: 'left',
+    },
+    metadata: {
+      fontSize: 10,
+      textAlign: 'left',
+      paddingBottom: 2,
+    },
+    tableHeader: {
+      fontSize: 10,
+      backgroundColor: '#edeeee',
+      border: '1 solid grey',
+    },
+    tableRow: {
+      borderRight: '1 solid grey',
+      borderLeft: '1 solid grey',
+      borderBottom: '1 solid grey',
+    },
+    row: {
+      display: 'flex',
+      flexDirection: 'row',
+      flexGrow: 0,
+      width: '100%',
+    },
+    col: {
+      flexGrow: 1,
+      textOverflow: 'ellipsis',
+      fontSize: 8,
+      textAlign: 'left',
+      paddingLeft: 2,
+      paddingVertical: 2,
+    },
+    accountCol: {
+      width: '20%',
+      borderRight: '1 solid grey',
+    },
+    typeCol: {
+      width: '8%',
+      borderRight: '1 solid grey',
+    },
+    nameCol: {
+      width: '22%',
+      borderRight: '1 solid grey',
+    },
+    scoreCol: {
+      width: '8%',
+      borderRight: '1 solid grey',
+    },
+    tagsMandatoryCol: {
+      width: '21%',
+      borderRight: '1 solid grey',
+    },
+    tagsOptionalCol: {
+      width: '21%',
+    },
+    tagBlock: {
+      display: 'flex',
+      flexDirection: 'row',
+      width: '100%',
+      justifyContent: 'space-around',
+      flexWrap: 'wrap',
+      fontSize: 8,
+    },
+    tag: {
+      paddingBottom: 1,
+    },
+  });
 
-            <View>
-              <Text> </Text><Text> </Text>
-              <Text style={{fontSize: 24, textAlign: "center", }}>Entity Mandatory Tag Compliance Report</Text>
-              <Text style={{fontSize: 24, textAlign: "center", }}>______________________________________</Text>
-              <Text style={{fontSize: 10, textAlign: 'center'}}>Report Date: {Date().toLocaleString()}</Text>
-              {/* <Text> </Text> */}
-              <Text style={{fontSize: 10, textAlign: 'left', margin: "5px"}}>Entity Count: ({props.data.length}) | Accounts: ({props.accounts}) | Filters: ({props.filters})</Text>
-            </View>
+  const getMissing = (tags) => {
+    const filteredTags = [];
+    tags.forEach((t) => {
+      t.tagValues &&
+        t.tagValues.forEach((v) => {
+          if (v === '<undefined>') filteredTags.push(t);
+        });
+    });
+    return filteredTags;
+  };
 
-            <View style={{
-              fontSize: 15, 
-              fontWeigth: 'bold', 
-              border: '2 solid black', 
-              backgroundColor: 'gray',
-              marginLeft: 2,
-              marginRight: 2,
-              }}>
-              <View style={styles.row}>
-                <Text key={"account_id"} style={{...styles.col, width: '14%'}}>{"Account ID"}</Text>
-                <Text key={"domain"} style={{...styles.col, width: '18%'}}>{"Domain"}</Text>
-                <Text key={"entity_name"} style={{...styles.col, width: '48%'}}>{"Name"}</Text>
-                <Text key={"compliance_score"} style={{...styles.col, width: '20%', textAlign: 'right'}}>{"Compliance Score %"}</Text>
-              </View>
-            </View>
+  return (
+    <Document>
+      <Page style={styles.page}>
+        <View fixed style={styles.pageNumber}>
+          <Text
+            fixed
+            render={({ pageNumber, totalPages }) =>
+              `${pageNumber} / ${totalPages}`
+            }
+          />
+        </View>
 
-            <View fixed>
-              <Text> </Text>
-            </View>
+        <View>
+          <Text break style={styles.header}>
+            Tag Compliance Report
+          </Text>
+          <Text break style={styles.subheader}>
+            Generated: {Date().toLocaleString()}
+          </Text>
+          <Text style={styles.metadata}>Account(s): {props.accounts}</Text>
+          <Text style={{ ...styles.metadata, paddingBottom: 15 }}>
+            Additional Scope: {props.filters}
+          </Text>
+        </View>
 
-            <View style={{
-              fontSize: 15, 
-              fontWeigth: 'bold', 
-              boder: '1 solid box',
-              minHight: 150,
-              margin: 2,
-              padding: 2,
-              }}
-              >
-              {props.data
-                ? props.data.map((entity, index) => {
-                    return(
-                      <>
-                        <View  wrap={false}>
-                          <View  key={entity.guid} style={styles.row}>
-                            <Text key={entity.guid+"_1"} style={{...styles.col, width: '14%'}}>{entity.account.id}</Text>
-                            <Text key={entity.guid+"_2"} style={{...styles.col, width: '18%'}}>{entity.domain}</Text>
-                            <Text key={entity.guid+"_3"} style={{...styles.col, width: '55%'}}>{entity.name}</Text>
-                            <Text key={entity.guid+"_4"} style={{...styles.col, width: '13%', textAlign: 'right', color: setComplianceColor(entity.complianceScore)}}>{(entity.complianceScore).toFixed(2) + "%"}</Text>
-                          </View>
-                          <Text style={{display: 'block', textAlign: 'center'}}> </Text>
-                          <View style={styles.splitScreen} wrap={false}>
-                              <View style={{...styles.leftSide, minHeight: tagMinHeight}}>
-                                <Text style={{fontSize: 12, fontWeight: 'bold', height: 30, textAlign: 'center', paddingTop: 5, backgroundColor: 'lightgray', border: '1 solid black'}}>Mandatory Tags</Text>
-                                {entity.mandatoryTags.map((tag, i) => {
-                                  return (
-                                    <>
-                                      <Text 
-                                      key={entity.guid+"_"+tag.tagKey+"_100"+ i.toString()} 
-                                      // style={{fontSize: 12, paddingLeft: 10, color: setTagComplianceColor(tag.tagValues, "mandatory")}}
-                                      style={{fontSize: 10, paddingLeft: 10, color: "black"}}
-                                      >
-                                        <Image src={tag.tagValues[0] === "<undefined>" ? tagOutput["mandatory"].failureIcon : tagOutput["mandatory"].successIcon} style={styles.image}/>
-                                        {" - " + tag.tagKey + ": " + tag.tagValues.join(", ")}</Text>
-                                    </>
-                                  )
-                                })}
-                              </View>
-                              <View style={{...styles.rightSide, minHeight: tagMinHeight}}>
-                                <Text style={{fontSize: 12, fontWeight: 'bold', height: 30, textAlign: 'center', paddingTop: 5, backgroundColor: 'lightgray', border: '1 solid black'}}>Optional Tags</Text>
-                                {entity.optionalTags.map((tag, i) => {
-                                  return (
-                                    <>
-                                      <Text 
-                                      key={entity.guid+"_"+tag.tagKey+"_200"+ i.toString()} 
-                                      // style={{fontSize: 12, paddingLeft: 10, color: setTagComplianceColor(tag.tagValues, "optional")}}
-                                      style={{fontSize: 10, paddingLeft: 10, color: "black"}}
-                                      >
-                                        <Image src={tag.tagValues[0] === "<undefined>" ? tagOutput["optional"].failureIcon : tagOutput["optional"].successIcon} style={styles.image}/>
-                                        {" - " + tag.tagKey + ": " + tag.tagValues.join(", ")}</Text>
-                                    </>
-                                  )
-                                })}
-                              </View>
-                          </View>
-                          <Text style={{display: 'block'}}> </Text>
-                          <Text style={{display: 'block'}}> </Text>
-                        </View>
-                      </>
-                    );
-                })
-                : ""
-              }
-            </View>
-          </Page>
-        </Document>
-    );
+        <View fixed style={styles.tableHeader}>
+          <View style={styles.row}>
+            <Text
+              key="account_id"
+              style={{ ...styles.col, ...styles.accountCol }}
+            >
+              Account
+            </Text>
+            <Text key="domain" style={{ ...styles.col, ...styles.typeCol }}>
+              Type
+            </Text>
+            <Text
+              key="entity_name"
+              style={{ ...styles.col, ...styles.nameCol }}
+            >
+              Name
+            </Text>
+            <Text
+              key="compliance_score"
+              style={{ ...styles.col, ...styles.scoreCol }}
+            >
+              Score
+            </Text>
+            <Text
+              key="mandatoryTags"
+              style={{ ...styles.col, ...styles.tagsMandatoryCol }}
+            >
+              Missing Mandatory Tags
+            </Text>
+            <Text
+              key="optionalTags"
+              style={{ ...styles.col, ...styles.tagsOptionalCol }}
+            >
+              Missing Optional Tags
+            </Text>
+          </View>
+        </View>
+
+        {props.data &&
+          props.data.map((entity) => {
+            return (
+              <>
+                <View wrap={false} style={styles.tableRow}>
+                  <View key={entity.guid} style={styles.row}>
+                    <Text
+                      key={`${entity.guid}_1`}
+                      style={{ ...styles.col, ...styles.accountCol }}
+                    >
+                      {entity.account.id}: {entity.account.name}
+                    </Text>
+                    <Text
+                      key={`${entity.guid}_2`}
+                      style={{ ...styles.col, ...styles.typeCol }}
+                    >
+                      {entity.domain}
+                    </Text>
+                    <Text
+                      key={`${entity.guid}_3`}
+                      style={{ ...styles.col, ...styles.nameCol }}
+                    >
+                      {entity.name}
+                    </Text>
+                    <Text
+                      key={`${entity.guid}_4`}
+                      style={{
+                        ...styles.col,
+                        ...styles.scoreCol,
+                        color: setComplianceColor(entity.complianceScore),
+                      }}
+                    >
+                      {`${entity.complianceScore.toFixed(2)}%`}
+                    </Text>
+                    <View
+                      key={`${entity.guid}_5`}
+                      style={{ ...styles.col, ...styles.tagsMandatoryCol }}
+                    >
+                      {getMissing(entity.mandatoryTags) && (
+                        <>
+                          {getMissing(entity.mandatoryTags).map((tag, i) => {
+                            return (
+                              <Text
+                                key={`${entity.guid}_${
+                                  tag.tagKey
+                                }_${i.toString()}`}
+                                style={styles.tag}
+                              >
+                                {tag.tagKey}
+                              </Text>
+                            );
+                          })}
+                        </>
+                      )}
+                    </View>
+                    <View
+                      key={`${entity.guid}_6`}
+                      style={{ ...styles.col, ...styles.tagsOptionalCol }}
+                    >
+                      {getMissing(entity.optionalTags) && (
+                        <>
+                          {getMissing(entity.optionalTags).map((tag, i) => {
+                            return (
+                              <Text
+                                key={`${entity.guid}_${
+                                  tag.tagKey
+                                }_${i.toString()}`}
+                                style={styles.tag}
+                              >
+                                {tag.tagKey}
+                              </Text>
+                            );
+                          })}
+                        </>
+                      )}
+                    </View>
+                  </View>
+                </View>
+              </>
+            );
+          })}
+      </Page>
+    </Document>
+  );
+}
+
+PdfDocument.propTypes = {
+  data: PropTypes.object.isRequired,
+  accounts: PropTypes.string.isRequired,
+  filters: PropTypes.string.isRequired,
 }
