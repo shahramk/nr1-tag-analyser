@@ -40,7 +40,7 @@ export default class Config extends React.Component {
       documentId: 'config',
     });
 
-    const data = (config || {}).data;
+    const data = (config || {}).data || {templates: [], complianceBands: [], entityTypes: []};
 
     this.setState({ data });
   };
