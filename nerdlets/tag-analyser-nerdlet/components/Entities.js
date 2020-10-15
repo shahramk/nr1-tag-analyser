@@ -1,16 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Stack, StackItem } from 'nr1';
+import { Spinner, Stack, StackItem, navigation, NerdletStateContext } from 'nr1';
 
-import { complianceBands } from '../utils/tag-schema';
+import { complianceBands } from '../../shared/utils/tag-schema';
 import MenuBar from './MenuBar/MenuBar';
 import ComplianceScore from './ComplianceScore/ComplianceScore';
 import EntityHeader from './EntityTable/EntityHeader';
 import EntityTable from './EntityTable/EntityTable';
+// import Configuration from "../../config"
+import { getAccountCollection, writeAccountDocument, getDate } from "../../shared/utils/helpers"
+import Modal from './Modal/Modal';
+import Config from './Config/Config';
 
 class Entities extends React.Component {
   state = {
+    loading: true,
     entities: this.props.tagHierarchy.entities,
     filteredEntities: this.props.tagHierarchy.entities,
     displayFilter: 'FULL',
@@ -20,11 +25,29 @@ class Entities extends React.Component {
       global: true,
       entityType: [],
     },
+    showConfigModal: false,
   };
 
-  componentWillMount() {
+  constructor(props) {
+    super(props);
+
+    this.userAccount = this.props.userAccount;
+    this.user = this.props.user;
+    this.nerdStoreCollection = "tagAnalyserCollection";
+    this.nerdStoreDocument = "tagAnalyserDocument";
+    // this.nerdStoreConfigData = {};
+
+    this.updateStateBind = this.updateState.bind(this);
+  };
+
+  updateState = (prop) => {
+    console.log(prop);
+  }
+
+  componentDidMount() {
     const accountList = this.getAccountListMultiSelect();
     const domainList = this.getEntityTypeList();
+    // const nerdstoreConfigData = this.getNerdStoreConfigData(accountList, domainList);
 
     const complianceItemStatus = {};
     complianceItemStatus.global = true;
@@ -41,22 +64,28 @@ class Entities extends React.Component {
       disableButtons: false,
       accountList: accountList,
       complianceItemStatus: complianceItemStatus,
+      // nerdstoreConfigData: nerdstoreConfigData,
+      loading: false,
     });
   }
 
+  openConfig = () => this.setState({ showConfigModal: true });
+
+  closeConfig = () => this.setState({ showConfigModal: false });
+
   getAccountListMultiSelect() {
     const {
-      tagHierarchy: { accountsList },
+      tagHierarchy: { accountList },
     } = this.props;
-    const accountList = [];
+    // const accountList = [];
 
-    accountsList.forEach((account) => {
-      accountList.push({
-        key: accountList.length,
-        value: `${account.id}: ${account.name}`,
-        text: account.name,
-      });
-    });
+    // accountList.forEach((account) => {
+    //   accountList.push({
+    //     key: accountList.length,
+    //     value: `${account.id}: ${account.name}`,
+    //     text: account.name,
+    //   });
+    // });
     return accountList;
   }
 
@@ -278,7 +307,7 @@ class Entities extends React.Component {
 
     return (
       <ComplianceScore
-        key={itemName} 
+        key={itemName}
         select={this.onSelectEntityType}
         compliance={compliance} />
     );
@@ -286,15 +315,22 @@ class Entities extends React.Component {
 
   render() {
     const {
+      loading,
       entities,
       filteredEntities,
       accountList,
       selectedAccounts,
+      showConfigModal,
     } = this.state;
+    const { user, userAccount } = this.props;
 
-    return (
+    const modalStyle = { width: '90%', height: '90%' };
+
+    return (loading ?
+        <Spinner />
+      :
       <div className="container">
-        <MenuBar accounts={accountList} change={this.onSelectAccount} />
+        <MenuBar accounts={accountList} change={this.onSelectAccount} openConfig={this.openConfig} />
 
         <div className="score__container">
           <div className="score__panel">
@@ -333,6 +369,11 @@ class Entities extends React.Component {
           />
           <EntityTable entities={filteredEntities} />
         </div>
+        {showConfigModal ? (
+          <Modal style={modalStyle} onClose={this.closeConfig}>
+            <Config accounts={accountList} user={user} userAccount={userAccount} onUpdate={data => console.log(data)} />
+          </Modal>
+        ): null}
       </div>
     );
   }
@@ -340,6 +381,8 @@ class Entities extends React.Component {
 
 Entities.propTypes = {
   tagHierarchy: PropTypes.object.isRequired,
+  user: PropTypes.object.isRequired,
+  userAccount: PropTypes.number.isRequired,
 };
 
 export default Entities;

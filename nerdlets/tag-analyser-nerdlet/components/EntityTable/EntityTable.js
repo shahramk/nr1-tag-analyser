@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { Table } from 'semantic-ui-react';
-import { complianceBands } from '../../utils/tag-schema';
+import { complianceBands } from '../../../shared/utils/tag-schema';
 import TagListing from './TagListing';
 
 const EntityTable = ({ entities }) => {

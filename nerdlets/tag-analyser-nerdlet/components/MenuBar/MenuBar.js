@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { Button } from 'nr1';
 import { Dropdown } from 'semantic-ui-react';
 
-const MenuBar = ({ accounts, change }) => {
+const MenuBar = ({ accounts, change, openConfig }) => {
   return (
     <div className="menu__container">
       <div className="menu__bar">
@@ -27,7 +27,7 @@ const MenuBar = ({ accounts, change }) => {
         <div className="menu__bar__item">
           <Button
             className="menu__bar__button"
-            onClick={() => null}
+            onClick={openConfig}
             type={Button.TYPE.PRIMARY}
             iconType={
               Button.ICON_TYPE
@@ -46,6 +46,7 @@ const MenuBar = ({ accounts, change }) => {
 MenuBar.propTypes = {
   accounts: PropTypes.array.isRequired,
   change: PropTypes.func.isRequired,
+  openConfig: PropTypes.func.isRequired,
 };
 
 export default MenuBar;
