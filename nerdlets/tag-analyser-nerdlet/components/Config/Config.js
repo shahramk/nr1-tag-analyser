@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { AccountStorageMutation, AccountStorageQuery } from 'nr1';
+import { Spinner, AccountStorageMutation, AccountStorageQuery } from 'nr1';
 
 import utils from './utils';
 
@@ -31,7 +31,7 @@ export default class Config extends React.Component {
   }
 
   fetchConfig = async () => {
-    const { defaultComplianceBands } = this.state;
+    // const { defaultComplianceBands } = this.state;
     const { userAccount } = this.props;
 
     const config = await AccountStorageQuery.query({
@@ -85,6 +85,10 @@ export default class Config extends React.Component {
     const tabIsActive = (t) => (currentTab === t ? 'active' : '');
 
     return (
+      <>
+        {!complianceBands ? 
+            <Spinner />
+        : (
       <div className="config-screen">
         <div className="tabs">
           <ul className="tabs-links">
@@ -120,6 +124,8 @@ export default class Config extends React.Component {
           </div>
         </div>
       </div>
-    );
+    )}
+    </>
+    )
   }
 }
