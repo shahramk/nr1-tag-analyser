@@ -9,7 +9,7 @@ import {
   Font,
 } from '@react-pdf/renderer';
 
-import { setComplianceColor } from '../utils/tag-schema';
+import { setComplianceColor } from '../../shared/utils/tag-schema';
 
 export function PdfDocument(props) {
   Font.register({
