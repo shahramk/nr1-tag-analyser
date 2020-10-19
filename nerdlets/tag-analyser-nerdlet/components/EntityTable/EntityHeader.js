@@ -26,7 +26,6 @@ export default class EntityHeader extends React.Component {
         <div className="button__row">
           <Button
             onClick={() => filter('FULL')}
-            // disabled={generatingPdf}
             type={Button.TYPE.PLAIN_NEUTRAL}
             iconType={Button.ICON_TYPE.INTERFACE__OPERATIONS__SHOW}
             sizeType={Button.SIZE_TYPE.SMALL}
@@ -36,7 +35,6 @@ export default class EntityHeader extends React.Component {
 
           <Button
             onClick={() => filter('OUT_OF_COMPLIANCE')}
-            // disabled={generatingPdf}
             type={Button.TYPE.PLAIN_NEUTRAL}
             iconType={Button.ICON_TYPE.INTERFACE__SIGN__TIMES__V_ALTERNATE}
             sizeType={Button.SIZE_TYPE.SMALL}
@@ -46,7 +44,6 @@ export default class EntityHeader extends React.Component {
 
           <Button
             onClick={() => filter('IN_COMPLIANCE')}
-            // disabled={generatingPdf}
             type={Button.TYPE.PLAIN_NEUTRAL}
             iconType={
               Button.ICON_TYPE.INTERFACE__SIGN__CHECKMARK__V_ALTERNATE
@@ -65,7 +62,6 @@ export default class EntityHeader extends React.Component {
           ) : (
             <Button
               onClick={() => this.onGeneratePdf()}
-              // disabled={generatingPdf}
               type={Button.TYPE.PLAIN_NEUTRAL}
               iconType={Button.ICON_TYPE.DOCUMENTS__DOCUMENTS__NOTES}
               sizeType={Button.SIZE_TYPE.SMALL}

@@ -1,7 +1,13 @@
 .compliance__score__container {
   width: 100%;
-  cursor: pointer;
   padding-right: .5rem;
+}
+
+.compliance__score__container,
+.compliance__score__container div,
+.compliance__score span,
+.compliance__score label {
+  cursor: pointer;
 }
 
 .compliance__score {
@@ -18,7 +24,6 @@
   box-shadow: 0px 1px 0px rgba(0, 63, 66, 0.07), 0px 3px 3px rgba(0, 39, 41, 0.03), 0px 5px 23px rgba(0, 45, 47, 0.03);
   transition: all 0.075s ease-out;
   transform: translateY(2px);
-  cursor: pointer;
 
   &:hover {
     transform: translateY(0);
