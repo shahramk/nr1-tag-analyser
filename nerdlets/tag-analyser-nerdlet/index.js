@@ -2,23 +2,39 @@ import React from "react";
 import { Icon, HeadingText, NerdGraphQuery, Spinner } from "nr1";
 
 import Entities from "./components/Entities";
-import { entityTypes, mandatoryTagRules, optionalTagRules } from "./utils/tag-schema"; // SK
 
-import { Dropdown, Checkbox } from 'semantic-ui-react';
+import { 
+  entityTypes, 
+  mandatoryTagRules, 
+  optionalTagRules, 
+  complianceBands,
+} from "../shared/utils/tag-schema"; // SK
+import { 
+  getAccountCollection, 
+  getDate, 
+  writeAccountDocument,
+} from "../shared/utils/helpers"; // SK
 
-export default class TagVisualizer extends React.Component {
+
+export default class TagAnalyser extends React.Component {
   state = {
+    userAccount: 192626,
+    user: {},
+    nerdStoreCollection: "tagAnalyserCollection",
+    nerdStoreDocument: "tagAnalyserDocument",
     tagHierarchy: {
       entities: [],
       accounts: {}, // SK -- {},
       entityTypes: {},
-      accountsList: [],
+      accountList: [],
     },
     entityCount: 0,
     loadedEntities: 0,
     doneLoading: false,
     loadError: undefined,
     queryCursor: undefined,
+
+    nerdStoreConfigData: {},
  };
 
   static config = {
@@ -29,6 +45,7 @@ export default class TagVisualizer extends React.Component {
   };
 
   componentDidMount() {
+
     this.startLoadingEntityTags();
   }
 
@@ -56,10 +73,8 @@ export default class TagVisualizer extends React.Component {
         )}
           <Entities
             tagHierarchy={tagHierarchy}
-            entityCount={entityCount}
-            loadedEntities={loadedEntities}
-            doneLoading={doneLoading}
-            mandatoryTags={this.state.mandatoryTags}
+            user={this.state.user}
+            userAccount={this.state.userAccount}
           />
         
       </>
@@ -72,17 +87,20 @@ export default class TagVisualizer extends React.Component {
 
     this.setState(
       {
+        user: {},
         tagHierarchy: {
           entities: [],
           accounts: {}, // SK -- {},
           entityTypes: {},
-          accountsList: [],
+          accountList: [],
         },
         entityCount: 0,
         loadedEntities: 0,
         doneLoading: false,
         loadError: undefined,
         queryCursor: undefined,
+
+        nerdStoreConfigData: {},
       },
       () => {
         loadEntityBatch();
@@ -99,6 +117,15 @@ export default class TagVisualizer extends React.Component {
     const query = `
     query EntitiesSearchQuery($queryString: String!, $nextCursor: String) {
       actor {
+        user {
+          email
+          id
+          name
+        }
+        accounts {
+          id
+          name
+        }
         entitySearch(query: $queryString) {
           count
           results(cursor: $nextCursor) {
@@ -155,10 +182,12 @@ export default class TagVisualizer extends React.Component {
       state: { loadedEntities, tagHierarchy },
     } = this;
 
+    let user = {};
     let entityCount = 0;
     let entities = [];
     let nextCursor = undefined;
     try {
+      user = data.actor.user || {};
       entityCount = data.actor.entitySearch.count;
       entities = data.actor.entitySearch.results.entities || [];
       nextCursor = data.actor.entitySearch.results.nextCursor || undefined;
@@ -173,6 +202,7 @@ export default class TagVisualizer extends React.Component {
         entityCount,
         loadedEntities: loadedEntities + entities.length,
         doneLoading: !nextCursor,
+        user,
       },
       () => {
         if (nextCursor) {
@@ -217,9 +247,13 @@ export default class TagVisualizer extends React.Component {
       if (!tagHierarchy.accounts[acctId]) tagHierarchy.accounts[acctId] = []
       tagHierarchy.accounts[acctId].push(entity.guid)
 
-      if ( typeof(tagHierarchy.accountsList.find(item => item.id === acctId)) === "undefined" ) {
-        // tagHierarchy.accountsList.push( JSON.parse( `{ "${acctId}": "${entity.account.name}"}` ));
-        tagHierarchy.accountsList.push( {id: acctId, name: entity.account.name} );
+      if ( typeof(tagHierarchy.accountList.find(item => item.id.toString() === acctId)) === "undefined" ) {
+        tagHierarchy.accountList.push({
+          id: entity.account.id,
+          key: tagHierarchy.accountList.length, 
+          value: `${entity.account.id}: ${entity.account.name}`, 
+          text: entity.account.name,
+        });
       }
 
       
