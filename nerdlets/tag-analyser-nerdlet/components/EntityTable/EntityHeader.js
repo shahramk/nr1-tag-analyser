@@ -57,6 +57,7 @@ export default class EntityHeader extends React.Component {
               data={entities}
               accounts={!accounts ? 'All Accounts' : accounts}
               filters={entityType}
+              complianceBands={complianceBands}
               pdfComplete={this.onPdfDownload}
             />
           ) : (
