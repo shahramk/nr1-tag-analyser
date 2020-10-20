@@ -1,50 +1,224 @@
-import {
-    AccountStorageQuery,
-    AccountStorageMutation,
-    // AccountsQuery,
-    // NerdGraphQuery,
-    // UserStorageQuery,
-    // UserStorageMutation,
-    // EntityStorageQuery,
-    // EntityStorageMutation,
-} from 'nr1';
+import iconSuccess from "../images/green-check-mark-2.png";
+import iconFailure from "../images/red-x-mark-2.png";
+import iconWarning from "../images/warning-2.png";
+
+const TAG_SCHEMA_ENFORCEMENT = {
+    required: "required",
+    recommended: "recommended",
+    optional: "optional",
+    deprecated: "deprecated",
+    prohibited: "prohibited",
+}
+
+const SCHEMA = [
+    // {
+    //     label: 'Open Stack Project',
+    //     key: 'osproject',
+    //     purpose: '',
+    //     enforcement: TAG_SCHEMA_ENFORCEMENT.required,
+    //     allowedValues: [],
+    // },
+    // {
+    //     label: 'Open Stack Host',
+    //     key: 'oshost',
+    //     purpose: '',
+    //     enforcement: TAG_SCHEMA_ENFORCEMENT.required,
+    //     allowedValues: [],
+    // },
+    {
+        label: 'RPM Account',
+        key: 'account',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.required,
+        allowedValues: [],
+    },
+    {
+        label: 'Trusted Account ID',
+        key: 'trustedAccountId',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.required,
+        allowedValues: [],
+    },
+    {
+        label: 'Owning Team',
+        key: 'Team',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.required,
+        allowedValues: [],
+    },
+    
+    {
+        label: 'Language',
+        key: 'language',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.optional,
+        allowedValues: [],
+    },
+    {
+        label: 'RPM Account ID',
+        key: 'accountId',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.optional,
+        allowedValues: [],
+    },
+
+    {
+        label: 'Entity Environment',
+        key: 'Environment',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.required,
+        allowedValues: ['Dev', 'Test', 'UAT', 'QAT', 'Staging', 'Hotfix', 'Prod', 'NonProd'],
+    },
+    {
+        label: 'Application Name',
+        key: 'Applicationname',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.required,
+        allowedValues: [],
+    },
+    {
+        label: 'Product Name',
+        key: 'Product',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.required,
+        allowedValues: [],
+    },
+    {
+        label: 'Department Name',
+        key: 'Department',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.required,
+        allowedValues: [],
+    },
+
+
+
+
+
+    {
+        label: 'Created',
+        key: 'created',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.optional,
+        allowedValues: [],
+    },
+    {
+        label: 'Modified',
+        key: 'modified',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.optional,
+        allowedValues: [],
+    },
+    {
+        label: 'Operational Hours',
+        key: 'operationalhours',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.optional,
+        allowedValues: [],
+    },
+    {
+        label: 'Version Number',
+        key: 'version',
+        purpose: '',
+        enforcement: TAG_SCHEMA_ENFORCEMENT.optional,
+        allowedValues: [],
+    },
+]
+
+// const mandatoryTagRules = SCHEMA.filter(s => s.enforcement === TAG_SCHEMA_ENFORCEMENT.required) || []
+// const optionalTagRules = SCHEMA.filter(s => s.enforcement === TAG_SCHEMA_ENFORCEMENT.optional) || []
+
+const defaultEntityTypes = [
+    "'APM'", 
+    "'MOBILE'", 
+    "'BROWSER'",
+    "'INFRA'",
+    // "'SYNTH'",
+]
+
+const defaultComplianceBands = {
+    // rule: the loverlimit always falls within the range
+    highBand: { upperLimit: 100, lowerLimit: 90,  color: "seagreen"},
+    midBand: { upperLimit: 90, lowerLimit: 70, color: "sandybrown"},
+    lowBand: { upperLimit: 70, lowerLimit: 0, color: "orangered"},
+}
+
+const tagOutput = {
+    mandatory: {
+      successColor: "seagreen",
+      successIcon: iconSuccess,
+      failureColor: "orangered",
+      failureIcon: iconFailure,
+    },
+    optional: {
+      successColor: "mediumseagreen",
+      successIcon: iconSuccess,
+      failureColor: "sandybrown",
+      failureIcon: iconWarning,
+    }
+}
+
+const tagStyle = {
+    fontSize: "16px",
+    // fontWeight: "bold",
+    // border: "4px solid dimgray",
+    border: "1px solid dimgray",
+    borderRadius: "10px",
+    margin: "15px 15px",
+    padding: "8px",
+    // // color: "black",
+    // // color: "#F5DEB3", 
+    // // color: "navajowhite",
+    color: "white",
+  }
   
-export const getAccountCollection = async ( accountId, collection, documentId ) => {
-    const payload = { collection };
-    payload.accountId = parseFloat(accountId);
-    if (documentId) payload.documentId = documentId;
-    const result = await AccountStorageQuery.query(payload);
-    console.log(">>> in getAccountCollection() >>> result: ", result);
-    const collectionResult = (result || {}).data || (documentId ? null : []);
-    return collectionResult;
+const setComplianceColor = (s, complianceBands) => {
+    const score = parseFloat(s);
+    if (score >= complianceBands.highBand.lowerLimit) // && score <= complianceBands.highBand.upperLimit)
+      return complianceBands.highBand.color;
+    else if (complianceBands.midBand.lowerLimit <= score  && score < complianceBands.midBand.upperLimit)
+      return complianceBands.midBand.color;
+    else
+      return complianceBands.lowBand.color;
+
+}
+
+const setTagComplianceColor = ((tagValues, category) => {
+    // return tagValues[0] !== "<undefined>" ? "seagreen": category === "mandatory" ? "orangered" : "sandybrown";
+
+    if (tagValues[0] !== "<undefined>") {
+        return "seagreen"
+    } else {
+        if (category === "mandatory") {
+            return "orangered"
+        }
+        else {
+            return "sandybrown"
+        }
+    }
+})
+
+const nerdStoreInfo = {
+    collectionName: 'tag-analyser',
+    documentName: 'config',
+
+    // // ### for testing
+    // collectionName: 'tag-analyser-test4',
+    // documentName: 'config-test4',
+
+}
+const helpers = {
+    SCHEMA, 
+    TAG_SCHEMA_ENFORCEMENT, 
+    // mandatoryTagRules, 
+    // optionalTagRules, 
+    defaultEntityTypes,
+    defaultComplianceBands,
+    tagOutput,
+    tagStyle,
+    nerdStoreInfo,
+    setComplianceColor,
+    setTagComplianceColor,
 };
 
-export const writeAccountDocument = async ( accountId, collection, documentId, payload ) => {
-    const result = await AccountStorageMutation.mutate({
-        accountId,
-        actionType: AccountStorageMutation.ACTION_TYPE.WRITE_DOCUMENT,
-        collection,
-        documentId,
-        document: payload
-    });
-    console.log(">>> in writeAccountDocument() >>> result: ", result);
-    return result;
-};
-
-export const getDate = () => {
-    var d = new Date();
-    return (
-      d.getUTCFullYear() +
-      '/' +
-      ('0' + (d.getUTCMonth() + 1)).slice(-2) +
-      '/' +
-      ('0' + d.getUTCDate()).slice(-2) +
-      ' ' +
-      ('0' + d.getUTCHours()).slice(-2) +
-      ':' +
-      ('0' + d.getUTCMinutes()).slice(-2) +
-      ':' +
-      ('0' + d.getUTCSeconds()).slice(-2)
-    );
-};
-
+export default helpers;

@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { Spinner, AccountStorageMutation, AccountStorageQuery } from 'nr1';
 
 import utils from './utils';
+import helpers from '../../../shared/utils/helpers'
 
 import Templates from './Templates';
 import EntityTypes from './EntityTypes';
@@ -19,11 +20,6 @@ export default class Config extends React.Component {
 
   state = {
     currentTab: 0,
-    defaultComplianceBands: {
-      highBand: { upperLimit: 100, lowerLimit: 90, color: 'seagreen' },
-      midBand: { upperLimit: 90, lowerLimit: 70, color: 'sandybrown' },
-      lowBand: { upperLimit: 70, lowerLimit: 0, color: 'orangered' },
-    }
   };
 
   componentDidMount() {
@@ -31,34 +27,33 @@ export default class Config extends React.Component {
   }
 
   fetchConfig = async () => {
-    // const { defaultComplianceBands } = this.state;
     const { userAccount } = this.props;
 
     const config = await AccountStorageQuery.query({
       accountId: userAccount,
-      collection: 'tag-analyser',
-      documentId: 'config',
+      collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
+      documentId: helpers.nerdStoreInfo.documentName,   // 'config',
     });
 
-    const data = (config || {}).data || {templates: [], complianceBands: [], entityTypes: []};
+    const nerdStoreConfigData = (config || {}).data || {templates: [], complianceBands: {}, entityTypes: []};
 
-    this.setState({ data });
+    this.setState({ nerdStoreConfigData });
   };
 
   updateConfig = async (type, updatedData) => {
-    const { data } = this.state;
+    const { nerdStoreConfigData } = this.state;
     const { userAccount, onUpdate } = this.props;
 
-    const newData = utils.deepCopy(data);
+    const newData = utils.deepCopy(nerdStoreConfigData);
     newData[type] = updatedData;
     await AccountStorageMutation.mutate({
       accountId: userAccount,
       actionType: AccountStorageMutation.ACTION_TYPE.WRITE_DOCUMENT,
-      collection: 'tag-analyser',
-      documentId: 'config',
+      collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
+      documentId: helpers.nerdStoreInfo.documentName,   // 'config',
       document: newData,
     });
-    this.setState({ data: newData }, () => onUpdate ? onUpdate(newData) : null);
+    this.setState({ nerdStoreConfigData: newData }, () => onUpdate ? onUpdate(newData) : null);
   };
 
   switchTab = async (e, id) => {
@@ -69,8 +64,7 @@ export default class Config extends React.Component {
   render() {
     const {
       currentTab,
-      defaultComplianceBands,
-      data: { templates, entityTypes, complianceBands } = {},
+      nerdStoreConfigData: { templates, entityTypes, complianceBands } = {},
     } = this.state;
     const {
       accounts,
@@ -118,7 +112,7 @@ export default class Config extends React.Component {
           </div>
           <div className={tabIsActive(2)}>
             <ComplianceBands
-              complianceBands={complianceBands || defaultComplianceBands}
+              complianceBands={complianceBands || helpers.defaultComplianceBands}
               onUpdate={this.updateConfig}
             />
           </div>

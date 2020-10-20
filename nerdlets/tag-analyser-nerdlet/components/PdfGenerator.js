@@ -1,5 +1,6 @@
 /* eslint-disable no-nested-ternary */
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { PdfDocument } from './PdfDocument';
@@ -19,16 +20,17 @@ export default class PdfGenerator extends React.Component {
   render() {
     const { pdfIsReady, preparing } = this.state;
     const { preparingPdf, pdfComplete } = this.props;
-    const data = this.props;
+    const { data, complianceBands, accounts, filters } = this.props;
     
     //pdfIsReady ? 
     return (
       <PDFDownloadLink
         document={
           <PdfDocument
-            data={data.data}
-            accounts={data.accounts}
-            filters={data.filters}
+            data={data}
+            accounts={accounts}
+            complianceBands={complianceBands}
+            filters={filters}
           />
         }
         fileName="nr_tags_report.pdf"
@@ -56,4 +58,12 @@ export default class PdfGenerator extends React.Component {
         }
       </PDFDownloadLink>
   )}
+}
+
+PdfGenerator.propTypes = {
+  data: PropTypes.array.isRequired,
+  accounts: PropTypes.string.isRequired,
+  complianceBands: PropTypes.object.isRequired,
+  filters: PropTypes.string.isRequired,
+  pdfComplete: PropTypes.func.isRequired,
 }

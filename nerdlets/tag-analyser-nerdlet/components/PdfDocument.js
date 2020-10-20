@@ -9,7 +9,7 @@ import {
   Font,
 } from '@react-pdf/renderer';
 
-import { setComplianceColor } from '../../shared/utils/tag-schema';
+import helpers from '../../shared/utils/helpers';
 
 export function PdfDocument(props) {
   Font.register({
@@ -186,8 +186,8 @@ export function PdfDocument(props) {
           props.data.map((entity) => {
             return (
               <>
-                <View wrap={false} style={styles.tableRow}>
-                  <View key={entity.guid} style={styles.row}>
+                <View key={entity.guid} wrap={false} style={styles.tableRow}>
+                  <View key={`${entity.guid}_${entity.name}`} style={styles.row}>
                     <Text
                       key={`${entity.guid}_1`}
                       style={{ ...styles.col, ...styles.accountCol }}
@@ -211,7 +211,7 @@ export function PdfDocument(props) {
                       style={{
                         ...styles.col,
                         ...styles.scoreCol,
-                        color: setComplianceColor(entity.complianceScore),
+                        color: helpers.setComplianceColor(entity.complianceScore, props.complianceBands),
                       }}
                     >
                       {`${entity.complianceScore.toFixed(2)}%`}
@@ -225,9 +225,7 @@ export function PdfDocument(props) {
                           {getMissing(entity.mandatoryTags).map((tag, i) => {
                             return (
                               <Text
-                                key={`${entity.guid}_${
-                                  tag.tagKey
-                                }_${i.toString()}`}
+                                key={`${entity.guid}_5_${tag.tagKey}_${i.toString()}`}
                                 style={styles.tag}
                               >
                                 {tag.tagKey}
@@ -246,9 +244,7 @@ export function PdfDocument(props) {
                           {getMissing(entity.optionalTags).map((tag, i) => {
                             return (
                               <Text
-                                key={`${entity.guid}_${
-                                  tag.tagKey
-                                }_${i.toString()}`}
+                                key={`${entity.guid}_6_${ tag.tagKey }_${i.toString()}`}
                                 style={styles.tag}
                               >
                                 {tag.tagKey}
@@ -269,7 +265,8 @@ export function PdfDocument(props) {
 }
 
 PdfDocument.propTypes = {
-  data: PropTypes.object.isRequired,
+  data: PropTypes.array.isRequired,
   accounts: PropTypes.string.isRequired,
+  complianceBands: PropTypes.object.isRequired,
   filters: PropTypes.string.isRequired,
 }

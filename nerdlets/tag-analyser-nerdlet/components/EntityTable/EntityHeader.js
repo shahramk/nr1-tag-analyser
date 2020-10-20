@@ -13,7 +13,7 @@ export default class EntityHeader extends React.Component {
   onPdfDownload = () => this.setState({ generatingPdf: false });
 
   render() {
-    const { count, entityType, accounts, filter, entities } = this.props;
+    const { count, entityType, accounts, filter, entities, complianceBands } = this.props;
     const { generatingPdf } = this.state;
 
     return (
@@ -80,6 +80,7 @@ EntityHeader.propTypes = {
   count: PropTypes.number.isRequired,
   accounts: PropTypes.string,
   entityType: PropTypes.string.isRequired,
+  complianceBands: PropTypes.object.isRequired,
   entities: PropTypes.array.isRequired,
 };
 

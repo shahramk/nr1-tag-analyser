@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import helpers from '../../../shared/utils/helpers'
+
 export default class ComplianceBands extends React.Component {
   static propTypes = {
     complianceBands: PropTypes.object,
@@ -8,11 +10,12 @@ export default class ComplianceBands extends React.Component {
   };
 
   state = {
-    complianceBands: this.props.complianceBands || {
-      highBand: { upperLimit: 100, lowerLimit: 90, color: 'seagreen' },
-      midBand: { upperLimit: 90, lowerLimit: 70, color: 'sandybrown' },
-      lowBand: { upperLimit: 70, lowerLimit: 0, color: 'orangered' },
-    },
+    complianceBands: this.props.complianceBands || helpers.defaultComplianceBands,
+    // complianceBands: this.props.complianceBands || {
+    //     highBand: { upperLimit: 100, lowerLimit: 90, color: 'seagreen' },
+    //   midBand: { upperLimit: 90, lowerLimit: 70, color: 'sandybrown' },
+    //   lowBand: { upperLimit: 70, lowerLimit: 0, color: 'orangered' },
+    // },
   };
 
   deepCopy = (obj) => {

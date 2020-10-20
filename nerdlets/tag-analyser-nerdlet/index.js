@@ -1,40 +1,44 @@
 import React from "react";
-import { Icon, HeadingText, NerdGraphQuery, Spinner } from "nr1";
+import { 
+  Icon, 
+  HeadingText, 
+  NerdGraphQuery, 
+  AccountStorageQuery, 
+  AccountStorageMutation, 
+  UserStorageQuery,
+  UserStorageMutation,
+  Spinner,
+ } from "nr1";
 
 import Entities from "./components/Entities";
 
-import { 
-  entityTypes, 
-  mandatoryTagRules, 
-  optionalTagRules, 
-  complianceBands,
-} from "../shared/utils/tag-schema"; // SK
-import { 
-  getAccountCollection, 
-  getDate, 
-  writeAccountDocument,
-} from "../shared/utils/helpers"; // SK
+import helpers from "../shared/utils/helpers";
+import Modal from './components/Modal/Modal';
+import Config from './components/Config/Config';
+import utils from './components/Config/utils'
 
 
 export default class TagAnalyser extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
   state = {
-    userAccount: 192626,
+    userAccount: null, //192626,
     user: {},
-    nerdStoreCollection: "tagAnalyserCollection",
-    nerdStoreDocument: "tagAnalyserDocument",
-    tagHierarchy: {
+    nerdGraphEntityData: {
       entities: [],
       accounts: {}, // SK -- {},
       entityTypes: {},
       accountList: [],
     },
+    nerdStoreConfigData: {},
+    showConfigModal: false,
     entityCount: 0,
     loadedEntities: 0,
     doneLoading: false,
     loadError: undefined,
     queryCursor: undefined,
-
-    nerdStoreConfigData: {},
  };
 
   static config = {
@@ -44,13 +48,90 @@ export default class TagAnalyser extends React.Component {
     },
   };
 
-  componentDidMount() {
+  updateParentState = (data) => {
+    console.log(">>> main-index.updateParentState: ", data);
+    // this.setState({
+    //   nerdStoreConfigData: data,
+    //   nerdGraphEntityData: {},
+    // });
+  }
 
+  onAccountChange = async (data) => {
+    console.log("@@>>> index.onAccountChange.selected account: ", data);
+    // await this.updateUserconfig({ userAccount: parseFloat(data.value.split[0]) })
+    // this.loadData();
+  }
+
+  getConfigFromNerdStore = async () => {
+    const data = await this.fetchConfig();
+    console.log("index.getConfigFromNerdStore: data: ", data);
+
+    const templateExists = data && data.templates && data.templates.length > 0;
+    const complianceBandsExists = data && data.complianceBands && Object.keys(data.complianceBands).length === 3;
+    const entityTypesExists = data && data.entityTypes && data.entityTypes.length > 0;
+
+    if ( !(templateExists && complianceBandsExists && entityTypesExists) ) {
+      // await createDefaultConfig();
+
+      // // force user to config modal
+      // const errorInfo = { 
+      //   msg: "Please update the following configuration option(s) to continue...",
+      //   items: [],
+      // }
+      // if (!templateExists) errorInfo.items.push("Templates")
+      // if (!complianceBandsExists) errorInfo.items.push("Compliance Bands")
+      // if (!entityTypesExists) errorInfo.items.push("Entity Types")
+
+      this.openConfig(); // showConfigModal to true
+      // show popupwindows with message
+    }
+    else {
+      // this.openConfig(); // ### SKTEST - TEMPORARY ###
+
+      const templateList = data.templates.length ?
+        data.templates.filter(template => template.enabled).map((template, index) => ({
+            id: index,
+            key: template.name,
+            text: template.name,
+            value: template.name,
+        }))
+      :
+        [];
+      
+      this.setState({
+        templates: data.templates,
+        templateList, // for dropdown use
+        complianceBands: data.complianceBands || helpers.defaultComplianceBands, 
+        entityTypes: data.entityTypes || helpers.defaultentityTypes,
+      });
+    }
+  }
+
+  loadData = async () => {
+    // const result = await this.fetchUserConfig(); // this updates the userAccount in this.state
     this.startLoadingEntityTags();
+
+  }
+
+  async componentDidMount() {
+    this.loadData();
+
+
+    // // SKTEST
+    // const result = await this.updateUserConfig({userAccount: 192626});
+    // console.log("from updateUserConfig: updated : result: ", result);
+
+    // const data = await this.fetchUserConfig();
+    // console.log("from fetchUserConfig: read data: ", data);
+
   }
 
   render() {
-    const {doneLoading, entityCount, loadedEntities, tagHierarchy} = this.state
+    const {doneLoading, entityCount, loadedEntities, nerdGraphEntityData, accountList, userAccount, user } = this.state
+
+    const { nerdStoreConfigData } = this.state;
+    const {showConfigModal } = this.state;
+    const modalStyle = { width: '90%', height: '90%' };
 
     if (entityCount < 1 || loadedEntities < 1) {
       if (doneLoading) {
@@ -64,6 +145,14 @@ export default class TagAnalyser extends React.Component {
       }
     }
 
+    if (showConfigModal) {
+      return (
+        <Modal style={modalStyle} onClose={this.closeConfig}>
+          <Config accounts={accountList} user={user} userAccount={userAccount} onUpdate={this.updateParentState} />
+        </Modal>
+      )
+    }
+    
     return (
       <>
         {doneLoading ? null : (
@@ -72,9 +161,12 @@ export default class TagAnalyser extends React.Component {
           </HeadingText>
         )}
           <Entities
-            tagHierarchy={tagHierarchy}
-            user={this.state.user}
-            userAccount={this.state.userAccount}
+            nerdGraphEntityData={nerdGraphEntityData}
+            user={user}
+            userAccount={userAccount}
+            // nerdStoreConfigData={nerdStoreConfigData}
+            // updateParentState={this.updateParentState}
+            // onAccountChange={this.onAccountChange}
           />
         
       </>
@@ -88,7 +180,7 @@ export default class TagAnalyser extends React.Component {
     this.setState(
       {
         user: {},
-        tagHierarchy: {
+        nerdGraphEntityData: {
           entities: [],
           accounts: {}, // SK -- {},
           entityTypes: {},
@@ -99,8 +191,6 @@ export default class TagAnalyser extends React.Component {
         doneLoading: false,
         loadError: undefined,
         queryCursor: undefined,
-
-        nerdStoreConfigData: {},
       },
       () => {
         loadEntityBatch();
@@ -150,7 +240,7 @@ export default class TagAnalyser extends React.Component {
     }
     `;
     const variables = {
-      queryString: "domain in ("  +  entityTypes.join(", ")  +  ")",
+      queryString: "domain in ("  +  helpers.defaultEntityTypes.join(", ")  +  ")",
     };
     if (queryCursor) {
       variables.nextCursor = queryCursor;
@@ -179,7 +269,7 @@ export default class TagAnalyser extends React.Component {
     const {
       loadEntityBatch,
       setState,
-      state: { loadedEntities, tagHierarchy },
+      state: { loadedEntities, nerdGraphEntityData },
     } = this;
 
     let user = {};
@@ -208,49 +298,42 @@ export default class TagAnalyser extends React.Component {
         if (nextCursor) {
           loadEntityBatch();
         }
+        else {
+          this.getConfigFromNerdStore();
+        }
       }
     );
   };
 
   processLoadedEntities = (entities) => {
-    const { tagHierarchy } = this.state;
+    const { nerdGraphEntityData } = this.state;
+    let { userAccount } = this.state;
 
+    let newNerdGraphEntityData = utils.deepCopy(nerdGraphEntityData);
+
+    console.log("processLoadedEntities.this.state.userAccount: ", this.state.userAccount);
     entities.forEach((entity) => {
       // get all the tags
       const { tags } = entity;
       entity.mandatoryTags = [];
       entity.optionalTags = [];
+      entity.complianceScore = 0.00;
 
-      // set mandatory tags for entity
-      let compliance = 0;
-      mandatoryTagRules.forEach(rule => {
-        const t = tags.find(tag => tag.tagKey === rule.key)
-        // const v = typeof(t) === "object" ? t.tagValues : ["<undefined>"]
-        let v = ["<undefined>"];
-        if (typeof(t) === "object") {
-          v = t.tagValues;
-          compliance += 1;
-        }
-        entity.mandatoryTags.push({ tagKey: rule.key, tagValues: v });
-      });
-      entity.complianceScore = compliance / mandatoryTagRules.length * 100; // against all mandatory tags
+      if (!userAccount) {
+        userAccount = parseFloat(entity.tags.find(tag => tag.tagKey === "trustedAccountId").tagValues[0]);
+        // console.log("userAccount: ", userAccount);
+      }
 
-      // set optional tags for entity
-      optionalTagRules.forEach(rule => {
-        const t = tags.find(tag => tag.tagKey === rule.key)
-        const v = typeof(t) === "object" ? t.tagValues : ["<undefined>"]
-        entity.optionalTags.push({ tagKey: rule.key, tagValues: v });
-      });
-      tagHierarchy.entities.push(entity)
+      newNerdGraphEntityData.entities.push(entity);
 
       const acctId = /*'rpm-' +*/ entity.account.id.toString()
-      if (!tagHierarchy.accounts[acctId]) tagHierarchy.accounts[acctId] = []
-      tagHierarchy.accounts[acctId].push(entity.guid)
+      if (!newNerdGraphEntityData.accounts[acctId]) newNerdGraphEntityData.accounts[acctId] = []
+      newNerdGraphEntityData.accounts[acctId].push(entity.guid)
 
-      if ( typeof(tagHierarchy.accountList.find(item => item.id.toString() === acctId)) === "undefined" ) {
-        tagHierarchy.accountList.push({
+      if ( typeof(newNerdGraphEntityData.accountList.find(item => item.id.toString() === acctId)) === "undefined" ) {
+        newNerdGraphEntityData.accountList.push({
           id: entity.account.id,
-          key: tagHierarchy.accountList.length, 
+          key: newNerdGraphEntityData.accountList.length, 
           value: `${entity.account.id}: ${entity.account.name}`, 
           text: entity.account.name,
         });
@@ -258,12 +341,64 @@ export default class TagAnalyser extends React.Component {
 
       
       const domain = entity.domain
-      if (!tagHierarchy.entityTypes[domain]) tagHierarchy.entityTypes[domain] = []
-      tagHierarchy.entityTypes[domain].push(entity.guid)
+      if (!newNerdGraphEntityData.entityTypes[domain]) newNerdGraphEntityData.entityTypes[domain] = []
+      newNerdGraphEntityData.entityTypes[domain].push(entity.guid)
 
     });
-
-    return tagHierarchy;
+    this.setState({
+      userAccount: userAccount || null,
+      nerdGraphEntityData: newNerdGraphEntityData,
+    })
   };
+
+
+  openConfig = () => this.setState({ showConfigModal: true });
+
+  closeConfig = () => this.setState({ showConfigModal: false });
+
+  fetchConfig = async () => {
+    const { userAccount } = this.state;
+
+    const config = await AccountStorageQuery.query({
+      accountId: userAccount,
+      collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
+      documentId: helpers.nerdStoreInfo.documentName,   // 'config',
+    });
+
+    const result = (config || {}).data;
+
+    return result;
+  };
+
+  fetchUserConfig = async () => {
+    let userData = null;
+    const result = await UserStorageQuery.query({
+      collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
+      documentId: helpers.nerdStoreInfo.documentName,   // 'config',
+    }).then(({ data }) => {
+      console.log("index.fetchUserConfig: ",data.userData.userAccount);
+      userData = data.userData;
+    });
+
+    if (userData && userData.userAcount && typeof(userData.userAccount) === 'number') {
+      this.setState({ userAccount: userData.userAccount });
+      console.log("fetchUserConfig.this.state.userAccount: ", this.state.userAccount);
+    }
+
+    return userData;
+  }
+
+  updateUserConfig = async (userData) => {
+    const result = await UserStorageMutation.mutate({
+      actionType: UserStorageMutation.ACTION_TYPE.WRITE_DOCUMENT,
+      collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
+      documentId: helpers.nerdStoreInfo.documentName,   // 'config',
+      document: {
+        userData,
+      },
+    });
+    console.log("index.updateUserConfig: ",result);
+    return result;
+  }
 
 }
