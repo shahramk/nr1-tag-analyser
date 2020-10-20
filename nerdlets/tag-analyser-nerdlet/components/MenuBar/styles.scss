@@ -1,5 +1,5 @@
 .menu__container {
-  height: 4.6rem;
+  height: 5rem;
   width: 100%;
 }
 
@@ -12,6 +12,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.menu__bar__dropdown-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .menu__bar__item {
