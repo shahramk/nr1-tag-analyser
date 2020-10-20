@@ -580,7 +580,7 @@ class Entities extends React.Component {
           onAccountChange={this.onSelectAccount}
           templates={templateDropdownList} 
           selectedTemplates={nerdStoreConfigData.selectedTempaltes} 
-          change={this.onSelectTemplate} 
+          onTemplateChange={this.onSelectTemplate} 
           openConfig={this.openConfig} 
         />
 
