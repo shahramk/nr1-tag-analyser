@@ -1,13 +1,10 @@
 import React from "react";
 import { 
-  Icon, 
   HeadingText, 
   NerdGraphQuery, 
-  AccountStorageQuery, 
-  AccountStorageMutation, 
-  UserStorageQuery,
-  UserStorageMutation,
+  AccountStorageQuery, AccountStorageMutation,
   Spinner,
+  Button,
  } from "nr1";
 
 import Entities from "./components/Entities";
@@ -18,160 +15,130 @@ import Config from './components/Config/Config';
 import utils from './components/Config/utils'
 
 
-export default class TagAnalyser extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
+export default class TagAnalyser extends React.PureComponent {
   state = {
-    userAccount: null, //192626,
-    user: {},
+    userLoading: true,
+    templateLoading: true,
+    templateInitialized: false,
+
+    tempTemplates: null,
+
+    user: null,
     nerdGraphEntityData: {
       entities: [],
-      accounts: {}, // SK -- {},
+      accounts: {},
       entityTypes: {},
       accountList: [],
     },
     nerdStoreConfigData: {},
+    showConfigEntryMessage: false,
     showConfigModal: false,
+    showConfigExitMessage: false,
     entityCount: 0,
     loadedEntities: 0,
-    doneLoading: false,
+    entityLoading: true,
     loadError: undefined,
     queryCursor: undefined,
- };
-
-  static config = {
-    hasTagFilterBar: false,
-    timePicker: {
-      isEnabled: false,
-    },
   };
 
-  updateParentState = (data) => {
-    console.log(">>> main-index.updateParentState: ", data);
-    // this.setState({
-    //   nerdStoreConfigData: data,
-    //   nerdGraphEntityData: {},
-    // });
+  async componentDidMount() {
+    await this.getUserInfo();
+
   }
 
-  onAccountChange = async (data) => {
-    console.log("@@>>> index.onAccountChange.selected account: ", data);
-    // await this.updateUserconfig({ userAccount: parseFloat(data.value.split[0]) })
-    // this.loadData();
+  getUserInfo = async () => {
+    const query = `
+    {
+      actor {
+        user {
+          email
+          id
+          name
+        }
+        accounts {
+          id
+          name
+        }
+      }
+    }    
+    `;
+    
+    try {
+      const { loading, data, errors } = await NerdGraphQuery.query({
+        query,
+      });
+
+      if (data) {
+        // console.log(data);
+        const accountList = [];
+        data.actor.accounts.forEach(account => {
+          accountList.push({
+            id: account.id,
+            key: accountList.length, 
+            value: `${account.id}: ${account.name}`, 
+            text: account.name,
+          });
+        })
+
+        this.setState({ user: data.actor.user, accounts: accountList, userLoading: false, }, () => {
+          this.getConfigFromNerdStore();
+        });
+      } else {
+        console.log("data is NOT truthy", data);
+      }
+      if (errors) {
+        console.log("errors:", errors);
+    }
+  }
+  catch(err) {
+        this.setState({ loadError: err.toString() });
+    };
   }
 
   getConfigFromNerdStore = async () => {
     const data = await this.fetchConfig();
-    console.log("index.getConfigFromNerdStore: data: ", data);
-
+    // console.log("index.getConfigFromNerdStore: data: ", data);
     const templateExists = data && data.templates && data.templates.length > 0;
     const complianceBandsExists = data && data.complianceBands && Object.keys(data.complianceBands).length === 3;
     const entityTypesExists = data && data.entityTypes && data.entityTypes.length > 0;
 
     if ( !(templateExists && complianceBandsExists && entityTypesExists) ) {
-      // await createDefaultConfig();
 
-      // // force user to config modal
-      // const errorInfo = { 
-      //   msg: "Please update the following configuration option(s) to continue...",
-      //   items: [],
-      // }
-      // if (!templateExists) errorInfo.items.push("Templates")
-      // if (!complianceBandsExists) errorInfo.items.push("Compliance Bands")
-      // if (!entityTypesExists) errorInfo.items.push("Entity Types")
-
-      this.openConfig(); // showConfigModal to true
-      // show popupwindows with message
+      this.setState({ 
+        templateLoading: false,
+        templateInitialized: false,
+        showConfigModal: true,
+        showConfigEntryMessage: true,
+      });
     }
     else {
-      // this.openConfig(); // ### SKTEST - TEMPORARY ###
-
-      const templateList = data.templates.length ?
-        data.templates.filter(template => template.enabled).map((template, index) => ({
-            id: index,
-            key: template.name,
-            text: template.name,
-            value: template.name,
-        }))
-      :
-        [];
-      
-      this.setState({
+      const nerdStoreConfigData = {
         templates: data.templates,
-        templateList, // for dropdown use
         complianceBands: data.complianceBands || helpers.defaultComplianceBands, 
         entityTypes: data.entityTypes || helpers.defaultentityTypes,
+      }
+      this.setState({ 
+        nerdStoreConfigData, 
+        templateLoading: false, 
+        templateInitialized: true,
+      }, () => {
+        this.startLoadingEntityTags()
       });
     }
   }
 
-  loadData = async () => {
-    // const result = await this.fetchUserConfig(); // this updates the userAccount in this.state
-    this.startLoadingEntityTags();
+  fetchConfig = async () => {
 
-  }
+    const config = await AccountStorageQuery.query({
+      accountId: helpers.masterAccountId,
+      collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
+      documentId: helpers.nerdStoreInfo.documentName,   // 'config',
+    });
 
-  async componentDidMount() {
-    this.loadData();
+    const result = (config || {}).data;
 
-
-    // // SKTEST
-    // const result = await this.updateUserConfig({userAccount: 192626});
-    // console.log("from updateUserConfig: updated : result: ", result);
-
-    // const data = await this.fetchUserConfig();
-    // console.log("from fetchUserConfig: read data: ", data);
-
-  }
-
-  render() {
-    const {doneLoading, entityCount, loadedEntities, nerdGraphEntityData, accountList, userAccount, user } = this.state
-
-    const { nerdStoreConfigData } = this.state;
-    const {showConfigModal } = this.state;
-    const modalStyle = { width: '90%', height: '90%' };
-
-    if (entityCount < 1 || loadedEntities < 1) {
-      if (doneLoading) {
-        return (
-          <HeadingText type={HeadingText.TYPE.HEADING_3}>
-            No tags / entities could be loaded.
-          </HeadingText>
-        );
-      } else {
-        return (<Spinner />);
-      }
-    }
-
-    if (showConfigModal) {
-      return (
-        <Modal style={modalStyle} onClose={this.closeConfig}>
-          <Config accounts={accountList} user={user} userAccount={userAccount} onUpdate={this.updateParentState} />
-        </Modal>
-      )
-    }
-    
-    return (
-      <>
-        {doneLoading ? null : (
-          <HeadingText type={HeadingText.TYPE.HEADING_4}>
-            Loading tags... ({loadedEntities} / {entityCount} entities examined)
-          </HeadingText>
-        )}
-          <Entities
-            nerdGraphEntityData={nerdGraphEntityData}
-            user={user}
-            userAccount={userAccount}
-            // nerdStoreConfigData={nerdStoreConfigData}
-            // updateParentState={this.updateParentState}
-            // onAccountChange={this.onAccountChange}
-          />
-        
-      </>
-    );
-  }
+    return result;
+  };
 
   startLoadingEntityTags = () => {
     // reset all cached state and then fetch the first page of entity results...
@@ -179,16 +146,15 @@ export default class TagAnalyser extends React.Component {
 
     this.setState(
       {
-        user: {},
         nerdGraphEntityData: {
           entities: [],
-          accounts: {}, // SK -- {},
+          accounts: {},
           entityTypes: {},
           accountList: [],
         },
         entityCount: 0,
         loadedEntities: 0,
-        doneLoading: false,
+        entityLoading: true,
         loadError: undefined,
         queryCursor: undefined,
       },
@@ -207,16 +173,7 @@ export default class TagAnalyser extends React.Component {
     const query = `
     query EntitiesSearchQuery($queryString: String!, $nextCursor: String) {
       actor {
-        user {
-          email
-          id
-          name
-        }
-        accounts {
-          id
-          name
-        }
-        entitySearch(query: $queryString) {
+         entitySearch(query: $queryString) {
           count
           results(cursor: $nextCursor) {
             entities {
@@ -266,40 +223,29 @@ export default class TagAnalyser extends React.Component {
   };
 
   processEntityQueryResults = (data) => {
-    const {
-      loadEntityBatch,
-      setState,
-      state: { loadedEntities, nerdGraphEntityData },
-    } = this;
-
-    let user = {};
+    const { loadedEntities } = this.state;
     let entityCount = 0;
     let entities = [];
     let nextCursor = undefined;
     try {
-      user = data.actor.user || {};
       entityCount = data.actor.entitySearch.count;
       entities = data.actor.entitySearch.results.entities || [];
       nextCursor = data.actor.entitySearch.results.nextCursor || undefined;
     } catch (err) {
       console.log("Error parsing results", err);
     }
-    this.processLoadedEntities(entities); // SK
+    this.processLoadedEntities(entities);
 
     this.setState(
       {
         queryCursor: nextCursor,
         entityCount,
         loadedEntities: loadedEntities + entities.length,
-        doneLoading: !nextCursor,
-        user,
+        entityLoading: nextCursor,
       },
       () => {
         if (nextCursor) {
-          loadEntityBatch();
-        }
-        else {
-          this.getConfigFromNerdStore();
+          this.loadEntityBatch();
         }
       }
     );
@@ -307,11 +253,8 @@ export default class TagAnalyser extends React.Component {
 
   processLoadedEntities = (entities) => {
     const { nerdGraphEntityData } = this.state;
-    let { userAccount } = this.state;
 
     let newNerdGraphEntityData = utils.deepCopy(nerdGraphEntityData);
-
-    console.log("processLoadedEntities.this.state.userAccount: ", this.state.userAccount);
     entities.forEach((entity) => {
       // get all the tags
       const { tags } = entity;
@@ -319,14 +262,9 @@ export default class TagAnalyser extends React.Component {
       entity.optionalTags = [];
       entity.complianceScore = 0.00;
 
-      if (!userAccount) {
-        userAccount = parseFloat(entity.tags.find(tag => tag.tagKey === "trustedAccountId").tagValues[0]);
-        // console.log("userAccount: ", userAccount);
-      }
-
       newNerdGraphEntityData.entities.push(entity);
 
-      const acctId = /*'rpm-' +*/ entity.account.id.toString()
+      const acctId = entity.account.id.toString()
       if (!newNerdGraphEntityData.accounts[acctId]) newNerdGraphEntityData.accounts[acctId] = []
       newNerdGraphEntityData.accounts[acctId].push(entity.guid)
 
@@ -339,66 +277,156 @@ export default class TagAnalyser extends React.Component {
         });
       }
 
-      
       const domain = entity.domain
       if (!newNerdGraphEntityData.entityTypes[domain]) newNerdGraphEntityData.entityTypes[domain] = []
       newNerdGraphEntityData.entityTypes[domain].push(entity.guid)
 
     });
     this.setState({
-      userAccount: userAccount || null,
       nerdGraphEntityData: newNerdGraphEntityData,
     })
   };
 
+  onCloseConfig = () => {
+    const tempTemplates = utils.deepCopy(this.state.tempTemplates);
 
-  openConfig = () => this.setState({ showConfigModal: true });
+    if (tempTemplates) { 
+      // make sure all config components exist (templates, complianceBands, entityTypes)
+      const templateExists = tempTemplates.templates && tempTemplates.templates.length > 0;
+      const complianceBandsExists = tempTemplates.complianceBands && Object.keys(tempTemplates.complianceBands).length === 3;
+      const entityTypesExists = tempTemplates.entityTypes && tempTemplates.entityTypes.length > 0;
+  
+      if (templateExists && complianceBandsExists && entityTypesExists) {
+        this.setState({ 
+          nerdStoreConfigData: tempTemplates, 
+          tempTemplates: null, 
+          showConfigModal: false, 
+          templateInitialized: true, 
+        }, () => {
+          this.startLoadingEntityTags()
+        });
+      }
+      else {
+        this.setState({
+          showConfigModal: false, 
+          templateInitialized: false,
+          showConfigExitMessage: true,
+        });
+      }
 
-  closeConfig = () => this.setState({ showConfigModal: false });
-
-  fetchConfig = async () => {
-    const { userAccount } = this.state;
-
-    const config = await AccountStorageQuery.query({
-      accountId: userAccount,
-      collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
-      documentId: helpers.nerdStoreInfo.documentName,   // 'config',
-    });
-
-    const result = (config || {}).data;
-
-    return result;
-  };
-
-  fetchUserConfig = async () => {
-    let userData = null;
-    const result = await UserStorageQuery.query({
-      collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
-      documentId: helpers.nerdStoreInfo.documentName,   // 'config',
-    }).then(({ data }) => {
-      console.log("index.fetchUserConfig: ",data.userData.userAccount);
-      userData = data.userData;
-    });
-
-    if (userData && userData.userAcount && typeof(userData.userAccount) === 'number') {
-      this.setState({ userAccount: userData.userAccount });
-      console.log("fetchUserConfig.this.state.userAccount: ", this.state.userAccount);
+    } else {
+      this.setState({ 
+        showConfigModal: false, 
+        templateInitialized: false, 
+        showConfigExitMessage: true,
+      });
     }
-
-    return userData;
   }
 
-  updateUserConfig = async (userData) => {
-    const result = await UserStorageMutation.mutate({
-      actionType: UserStorageMutation.ACTION_TYPE.WRITE_DOCUMENT,
-      collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
-      documentId: helpers.nerdStoreInfo.documentName,   // 'config',
-      document: {
-        userData,
-      },
+  onUpdateTemplate = (data) => {
+    // console.log(">>> main-index.updateTemplate: ", data);
+    this.setState({
+      tempTemplates: data,
     });
-    console.log("index.updateUserConfig: ",result);
-    return result;
   }
 
+  onCheckConfig = (mode) => {
+    switch (mode) {
+      case 'enter':
+        this.setState({
+          showConfigEntryMessage: false,
+        });
+        break;
+      case 'exit':
+        this.setState({
+          showConfigExitMessage: false,
+          showConfigModal: true,
+        });
+        break;
+      case 'cancel':
+        this.setState({
+          showConfigExitMessage: false,
+          showConfigModal: false,
+          templateLoading: true,
+        });
+        break;
+      }
+  }
+
+  render() {
+    const {
+      entityLoading, 
+      entityCount, 
+      loadedEntities, 
+      nerdGraphEntityData,
+      nerdStoreConfigData,
+      user,
+      accounts,
+      userLoading,
+      templateLoading,
+      showConfigModal,
+      showConfigEntryMessage,
+      showConfigExitMessage,
+    } = this.state
+
+    const modalStyle = { width: '90%', height: '90%' };
+
+    if (userLoading || templateLoading) {
+      return (<Spinner />);
+    }
+    else {
+      if (!templateLoading) {
+        if (showConfigEntryMessage) {
+          return <div className="config__popup__message">
+            <center><h1>No Configuration Data Found</h1></center>
+            <br/>
+            <center><h2>Please enter configuration information for this application</h2></center>
+            <br/>
+            <center>
+              <Button className="config_message_button" sizeType={Button.SIZE_TYPE.MEDIUM} type={Button.TYPE.PRIMARY} onClick={() => {this.onCheckConfig('enter')}}>OK</Button>
+            </center>
+          </div>
+        }
+        else if (showConfigModal) {
+          return (
+            <Modal style={modalStyle} onClose={this.onCloseConfig}>
+              <Config accounts={accounts} user={user} onUpdate={this.onUpdateTemplate} />
+            </Modal>
+          )
+        }
+        else if (showConfigExitMessage) {
+          return <div className="config__popup__message">
+            <center><h1>Config Not Completed</h1></center>
+            <br/>
+            <center><h2>Please complete the configuration before you could continue to the next step</h2></center>
+            <br/>
+            <center>
+              <Button className="config_message_button" style={{marginRight: "50px"}} sizeType={Button.SIZE_TYPE.MEDIUM} type={Button.TYPE.NORMAL} onClick={() => {this.onCheckConfig('cancel')}}>Cancel</Button>
+              <Button className="config_message_button" style={{marginLeft: "50px"}} sizeType={Button.SIZE_TYPE.MEDIUM} type={Button.TYPE.NORMAL} onClick={() => {this.onCheckConfig('exit')}}>OK</Button>
+            </center>
+          </div>
+        }
+        else {
+          return (
+            <>
+              {entityLoading ? 
+                <HeadingText type={HeadingText.TYPE.HEADING_4}>
+                  Loading tags... ({loadedEntities} / {entityCount} entities examined)
+                </HeadingText>
+              : 
+                // <Entities
+                //   nerdGraphEntityData={nerdGraphEntityData}
+                //   user={user}
+                //   userAccount={helpers.masterAccountId} // SKTEMP -- 10-22-20
+                //   accounts={accounts} // SKTEMP -- 10-22-20
+                //   nerdStoreConfigData={nerdStoreConfigData} // SKTEMP -- 10-22-20
+                // />
+                <div><h1>### Uncomment Entities in index.js->render() ###</h1></div>
+              }
+            </>
+          );
+        }
+      }
+    }
+  }
 }

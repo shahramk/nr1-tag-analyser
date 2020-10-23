@@ -14,12 +14,12 @@ export default class Config extends React.Component {
   static propTypes = {
     accounts: PropTypes.array,
     user: PropTypes.object,
-    userAccount: PropTypes.number,
     onUpdate: PropTypes.func,
   };
 
   state = {
     currentTab: 0,
+    configSent: false,
   };
 
   componentDidMount() {
@@ -27,27 +27,37 @@ export default class Config extends React.Component {
   }
 
   fetchConfig = async () => {
-    const { userAccount } = this.props;
-
     const config = await AccountStorageQuery.query({
-      accountId: userAccount,
+      accountId: helpers.masterAccountId,
       collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
       documentId: helpers.nerdStoreInfo.documentName,   // 'config',
     });
 
-    const nerdStoreConfigData = (config || {}).data || {templates: [], complianceBands: {}, entityTypes: []};
+    // const nerdStoreConfigData = (config || {}).data || {templates: [], complianceBands: helpers.defaultComplianceBands, entityTypes: []};
+    
+    if (!config) config = {};
+    if (!config.data) config.data = {};
+    if (!config.data.templates) config.data.termplates = [];
+    if (!config.data.complianceBands || Object.keys(config.data.complianceBands) == 0) config.data.complianceBands = helpers.defaultComplianceBands;
+    if (!config.data.entityTypes) config.data.entityTypes = [];
+    const nerdStoreConfigData = config.data;
 
-    this.setState({ nerdStoreConfigData });
+    this.setState({ nerdStoreConfigData }, () => {
+      if (!this.state.configSent) {
+        this.props.onUpdate(nerdStoreConfigData);
+        this.setState({ configSent: true });
+      }
+    });
   };
 
   updateConfig = async (type, updatedData) => {
     const { nerdStoreConfigData } = this.state;
-    const { userAccount, onUpdate } = this.props;
+    const { onUpdate } = this.props;
 
     const newData = utils.deepCopy(nerdStoreConfigData);
     newData[type] = updatedData;
     await AccountStorageMutation.mutate({
-      accountId: userAccount,
+      accountId: helpers.masterAccountId,
       actionType: AccountStorageMutation.ACTION_TYPE.WRITE_DOCUMENT,
       collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
       documentId: helpers.nerdStoreInfo.documentName,   // 'config',
@@ -78,6 +88,8 @@ export default class Config extends React.Component {
     };
     const tabIsActive = (t) => (currentTab === t ? 'active' : '');
 
+    // console.log("complianceBands: ", complianceBands)
+    // console.log("helpers.defaultComplianceBands: ", helpers.defaultComplianceBands)
     return (
       <>
         {!complianceBands ? 
@@ -106,7 +118,7 @@ export default class Config extends React.Component {
           </div>
           <div className={tabIsActive(1)}>
             <EntityTypes
-              entityTypes={entityTypes || []}
+              entityTypes={entityTypes || helpers.defaultEntityTypes}
               onUpdate={this.updateConfig}
             />
           </div>
