@@ -20,7 +20,7 @@ export default class EntityHeader extends React.Component {
       <div className="entity__table__header__panel">
         <div className="entity__table__header__message">
           {`Showing ${count}${entityType !== 'None' ? ` ${entityType} ` : ''} 
-          ${count > 1 ? 'entities' : 'entity'} 
+          ${count > 1 || count === 0 ? 'entities' : 'entity'} 
           ${!accounts ? '' : `for account(s) ${accounts}`} `}
         </div>
         <div className="button__row">

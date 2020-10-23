@@ -1,294 +1,46 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Spinner, Stack, StackItem, AccountStorageQuery, AccountStorageMutation } from 'nr1';
+import { debounce, sortBy } from 'lodash';
+import { Spinner, Stack, StackItem } from 'nr1';
 
 import MenuBar from './MenuBar/MenuBar';
 import ComplianceScore from './ComplianceScore/ComplianceScore';
 import EntityHeader from './EntityTable/EntityHeader';
 import EntityTable from './EntityTable/EntityTable';
-import helpers from  "../../shared/utils/helpers"
 import Modal from './Modal/Modal';
 import Config from './Config/Config';
 import utils from './Config/utils';
 
-class Entities extends React.Component {
+class Entities extends React.PureComponent {
   state = {
     loading: true,
-    entities: this.props.nerdGraphEntityData.entities,
-    filteredEntities: this.props.nerdGraphEntityData.entities,
-    nerdStoreConfigData: {}, // this.props.nerdStoreConfigData,
+    entities: [],
+    accountEntities: [],
+    nerdStoreConfigData: {},
     displayFilter: 'FULL',
     selectedAccounts: [],
-    selectedTemplates: [],
     accountList: [],
     complianceItemStatus: {
       global: true,
       entityType: [],
     },
     showConfigModal: false,
+    tags: {},
   };
 
-  constructor(props) {
-    super(props);
+  // todo: state management needs to be moved to index.js
+  componentDidMount() {
+    const { nerdStoreConfigData, nerdGraphEntityData } = this.props;
 
-    this.userAccount = this.props.userAccount;
-    this.user = this.props.user;
-  };
-
-  updateState = (data) => {
-    console.log(">>> Entities.updateState: ", data);
-    this.loadNerdStoreData();
-  }
-
-  fetchConfig = async () => {
-    const { userAccount } = this.props;
-
-    const config = await AccountStorageQuery.query({
-      accountId: userAccount,
-      collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
-      documentId: helpers.nerdStoreInfo.documentName,   // 'config',
-    });
-
-    const result = (config || {}).data;
-    console.log(">>> Entities.fetchConfig: ", result);
-
-    return result;
-  };
-
-  updateConfig = async (type, updatedData) => {
-    const { nerdStoreConfigData } = this.state;
-    const { userAccount } = this.props;
-
-    const newData = utils.deepCopy(nerdStoreConfigData);
-    newData[type] = updatedData;
-    await AccountStorageMutation.mutate({
-      accountId: userAccount,
-      actionType: AccountStorageMutation.ACTION_TYPE.WRITE_DOCUMENT,
-      collection: helpers.nerdStoreInfo.collectionName, // 'tag-analyser',
-      documentId: helpers.nerdStoreInfo.documentName,   // 'config',
-      document: newData,
-    });
-  };
-
-  getConfigFromNerdStore = async () => {
-    const data = await this.fetchConfig();
-    // console.log("Entities:getConfigFromNerdStore:data: ", data);
-    const templateList = data.templates.length ?
-      data.templates.filter(template => template.enabled).map((template, index) => ({
-          id: index,
-          key: template.name,
-          text: template.name,
-          value: template.name,
-      }))
-    :
-      [];
-    
-    return {
-      templates: data.templates,
-      selectedTempaltes: data.selectedTemplates ? data.selectedTemplates : [],
-      selectedAccounts: data.selectedAccounts ? data.selectedAccounts : [],
-      templateList, 
-      complianceBands: data.complianceBands, // || helpers.defaultComplianceBands, 
-      entityTypes: data.entityTypes, // || Object.keys(this.props.nerdGraphEntityData.entityTypes),
-    };
-  }
-
-  setEntitiesTagStatus = (entities, activeTags) => {
-    // console.log("@@>>> activeTags: ", activeTags);
-    entities.forEach(entity => {
-      entity.mandatoryTags = [];
-      entity.optionalTags = [];
-      let compliance = 0;
-      const mandatoryTagCount = activeTags.filter(activeTag => activeTag.mandatory).length;
-      activeTags.forEach(activeTag => {
-        const t = entity.tags.find(tag => tag.tagKey === activeTag.name)
-        if (typeof(t) === "object") {
-          if (activeTag.mandatory) {
-            entity.mandatoryTags.push(t);
-            compliance += 1;
-          }
-          else {
-            entity.optionalTags.push(t);
-          }
-        }
-        else {
-          if (activeTag.mandatory) {
-            entity.mandatoryTags.push({ tagKey: activeTag.name, tagValues: ["<undefined>"]});
-          }
-          else {
-            entity.optionalTags.push({ tagKey: activeTag.name, tagValues: ["<undefined>"]});
-          }
-        }
-      });
-      entity.complianceScore = compliance / mandatoryTagCount * 100;
-    });
-    return entities;
-  }
-
-  sortTagsUnique(tags) {
-    // sort tags
-    const t5 = tags.sort(function(a, b) {
-      if (a.name > b.name) {
-        return 1;
-      } else if (a.name === b.name) {
-          if (a.mandatory) {
-            return -1;
-          } else if (a.mandatory === b.mandatory) {
-            return 0;
-          } else {
-            return 1;
-          }
-      } else {
-        return -1;
-      }
-    });
-
-    // make the list unique - mandatory comes before option - so pick the first occurence when duplicate
-    const t5_unique = [];
-    let prevTag = {};
-    for (var i=0; i< t5.length; i++) {
-          if (prevTag === {} || t5[i].name !== prevTag.name) {
-            t5_unique.push(t5[i]);
-            prevTag = t5[i];
-          }
-    }
-    return t5_unique;
-  }
-
-  inArray = (list, value) => {
-    for (var key of list) if(value === key) return true;
-    return false;
-  }
-
-  filterEntitiesByDomains = (entities, domains) => {
-    return entities.filter(entity => this.inArray(domains, entity.domain));
-  }
-
-  updateActiveTemplatesDetails = (selectedTemplates) => {
-    const { nerdStoreConfigData } = this.state;
-    let scope = "account"; // if at least one "global" template selected, set scope of selected templates to "global"
-    let accounts = [];
-    let tags = [];
-
-    selectedTemplates.forEach(templateName => {
-      const t = nerdStoreConfigData.templates.find(template => template.name === templateName);
-      if (t) {
-        if (t.scope === "account") {
-          accounts = [ ...accounts, ...(t.accounts) ];
-        }
-        if (t.scope === "global") {
-          scope = "global";
-        }
-
-        tags = [ ...tags, ...(t.tags) ];
-      }
-    });
-
-    const sortedUniqueTags = this.sortTagsUnique(tags);
-    return {
-      scope,
-      accounts: scope === "global" ? [] : [...new Set(accounts)].sort(),
-      tags: sortedUniqueTags,
-    };
-  }
-
-  updateCurrentScopeBySelectedTemplates = (activeTemplates) => {
-    const { nerdStoreConfigData } = this.state;
-    let updatedEntities = [];
-    if (activeTemplates.scope === "global") {
-      updatedEntities = this.filterEntitiesByDomains(this.props.nerdGraphEntityData.entities, nerdStoreConfigData.entityTypes);
-    }
-    else {
-      let entityGuids = [];
-      // get guids for all selected accounts
-      activeTemplates.accounts.forEach((account) => {
-        entityGuids = [
-          ...entityGuids,
-          ...(this.props.nerdGraphEntityData.accounts[account]),
-        ];
-      });
-      // get entities for all selected guids
-      updatedEntities = this.getEntitiesByGuid(
-        this.props.nerdGraphEntityData.entities,
-        entityGuids
-      );
-    }
-
-    // filter by selected entityTypes
-    return this.filterEntitiesByDomains(updatedEntities, nerdStoreConfigData.entityTypes);
-  }
-
-  getTemplateListMultiSelect(nerdStoreConfigData) {
-    const templateList = [];
-    nerdStoreConfigData.templates.forEach(template => {
-      if (template.enabled) {
-        templateList.push({
-          key: template.id,
-          value: template.name,
-          text: `${template.name}: ${template.scope}`,
-        });
-      }
-    })
-
-    return templateList;
-  }
-
-  setGlobalTagStatus = (currentTemplates) => {
-    const { nerdStoreConfigData, complianceItemStatus, displayFilter } = this.state;
-    const entities = this.filterEntitiesByDomains(this.props.nerdGraphEntityData.entities, nerdStoreConfigData.entityTypes);
-
-    let filteredEntities = this.getFilteredEntities(entities, complianceItemStatus, displayFilter);
-    let tags = [];
-    currentTemplates.forEach(template => {
-      tags = [ ...tags, ...(template.tags) ];
-    })
-    filteredEntities = this.setEntitiesTagStatus(filteredEntities, tags);
-    return {
-      seletedTemplates: [],
-      entities,
-      filteredEntities,
-    };
-  }
-
-  onSelectTemplate = (data) => {
-    // based on the selectedTemplates (from Templates Dropdown):
-        // get updated entities
-        // set selectedTemplates
-        // set filteredEntities
-
-    // set scope, accounts, tags for multi-template selection
-    const { nerdStoreConfigData, complianceItemStatus, displayFilter } = this.state;
-    this.updateConfig('selectedTemplates', data.value);
-    if (!data.value.length) {
-      this.setState( this.setGlobalTagStatus(nerdStoreConfigData.templates) ); // if no templated selected -> include all tags from all templates
-    }
-    else {
-      const activeTemplates = this.updateActiveTemplatesDetails(data.value);
-      
-      const entities = this.updateCurrentScopeBySelectedTemplates(activeTemplates);
-      let filteredEntities = this.getFilteredEntities(entities, complianceItemStatus, displayFilter);
-      filteredEntities = this.setEntitiesTagStatus(filteredEntities, activeTemplates.tags);
-
-      this.setState({
-        selectedTemplates: data.value,
-        entities: entities,
-        filteredEntities: filteredEntities,
-      });
-    }
-  }
-
-  loadNerdStoreData = async () => {
-    const nerdStoreConfigData = await this.getConfigFromNerdStore();
-
-    const accountList = this.getAccountListMultiSelect();
-    const templateDropdownList = this.getTemplateListMultiSelect(nerdStoreConfigData);
-    const domainList = nerdStoreConfigData.entityTypes;
+    const accountEntities = utils.deepCopy(nerdGraphEntityData.entities);
+    const accountList = utils.deepCopy(nerdGraphEntityData.accountList);
+    const nerdStoreConfigCopy = utils.deepCopy(nerdStoreConfigData);
 
     const complianceItemStatus = {};
     complianceItemStatus.global = true;
     complianceItemStatus.entityType = [];
-    domainList.forEach((domainName) => {
+    nerdStoreConfigData.entityTypes.forEach((domainName) => {
       complianceItemStatus.entityType.push({
         name: domainName,
         selected: false,
@@ -296,44 +48,141 @@ class Entities extends React.Component {
       });
     });
 
-    this.setState({
-      selectedTemplates: nerdStoreConfigData.selectedTemplates ? nerdStoreConfigData.selectedTemplates : [],
-      selectedAccounts: nerdStoreConfigData.selectedAccounts ? nerdStoreConfigData.selectedAccounts : [],
-      nerdStoreConfigData,
-      disableButtons: false,
-      accountList: accountList,
-      complianceItemStatus: complianceItemStatus,
-      templateDropdownList: templateDropdownList,
-      loading: !(nerdStoreConfigData && nerdStoreConfigData.complianceBands && nerdStoreConfigData.complianceBands.highBand),
-    }, () => {
-      const tagStatusResult = this.setGlobalTagStatus(nerdStoreConfigData.templates); // returns: selectedTemplates, entities, filteredEntities
-
-    this.setState({
-      entities: tagStatusResult.entities,
-      filteredEntities: tagStatusResult.filteredEntities,
-    });
-    }
+    this.setState(
+      {
+        entities: nerdGraphEntityData.entities,
+        nerdStoreConfigData: nerdStoreConfigCopy,
+        accountEntities,
+        accountList,
+        complianceItemStatus: complianceItemStatus,
+      },
+      () => {
+        this.processTags();
+      }
     );
   }
 
-  componentDidMount() {
-    this.loadNerdStoreData();
+  // organize tags by account scope and remove duplicates
+  processTags = () => {
+    const { nerdStoreConfigData } = this.state;
+    const tags = {};
 
+    const globalTemplates = nerdStoreConfigData.templates.filter(
+      (template) => template.scope === 'global'
+    );
+    const accountTemplates = nerdStoreConfigData.templates.filter(
+      (template) => template.scope !== 'global'
+    );
+
+    globalTemplates.forEach((template) => {
+      const globalTags = tags.global;
+      if (globalTags) {
+        template.tags.forEach((tag) => {
+          this.addUniqueTag(globalTags, tag);
+        });
+      } else {
+        tags.global = template.tags;
+      }
+    });
+
+    accountTemplates.forEach((template) => {
+      template.accounts.forEach((account) => {
+        const accountTags = tags[account];
+        if (accountTags) {
+          template.tags.forEach((tag) => {
+            this.addUniqueTag(accountTags, tag);
+          });
+        } else {
+          tags[account] = template.tags;
+        }
+      });
+    });
+
+    // if an account has been set up with specific templates, merge the global set in
+    // there is no other way to properly identify duplicates between account and global level
+    // when applying tags to scoring, or displaying the tags, account=level tags override global
+    for (const [key, value] of Object.entries(tags)) {
+      if (key !== 'global') {
+        tags.global.forEach((tag) => {
+          this.addUniqueTag(value, tag);
+        });
+      }
+    }
+
+    this.setState({ tags }, () => this.processEntities());
+  };
+
+  addUniqueTag(tags, tag) {
+    const found = tags.find((t) => t.name === tag.name);
+    if (found) {
+      if (
+        tag.mandatory !== found.mandatory &&
+        tag.mandatory &&
+        !found.mandatory
+      ) {
+        found.mandatory = true;
+      }
+    } else {
+      tags.push(tag);
+    }
   }
 
-  openConfig = () => this.setState({ showConfigModal: true });
+  // score entities based on tag rules
+  processEntities = () => {
+    const { nerdStoreConfigData, entities, tags } = this.state;
 
-  closeConfig = () => this.setState({ showConfigModal: false });
+    const entitiesCopy = utils.deepCopy(
+      entities.filter((entity) => {
+        return nerdStoreConfigData.entityTypes.find(
+          (type) => type === entity.domain
+        );
+      })
+    );
 
-  getAccountListMultiSelect() {
-    const {
-      nerdGraphEntityData: { accountList },
-    } = this.props;
-    return accountList;
-  }
+    entitiesCopy.forEach((entity) => {
+      // check for account-specific tags; otherwise default to global
+      let accountTags = Object.keys(tags).find((t) => t === entity.account.id);
+      if (!accountTags) accountTags = tags.global;
+
+      entity.mandatoryTags = [];
+      entity.optionalTags = [];
+      let compliance = 0;
+      const mandatoryTagCount = accountTags.filter((t) => t.mandatory).length;
+
+      accountTags.forEach((accountTag) => {
+        const found = entity.tags.find((tag) => tag.tagKey === accountTag.name);
+
+        if (found) {
+          if (accountTag.mandatory) {
+            entity.mandatoryTags.push(found);
+            compliance += 1;
+          } else {
+            entity.optionalTags.push(found);
+          }
+        } else if (accountTag.mandatory) {
+          entity.mandatoryTags.push({
+            tagKey: accountTag.name,
+            tagValues: ['<undefined>'],
+          });
+        } else {
+          entity.optionalTags.push({
+            tagKey: accountTag.name,
+            tagValues: ['<undefined>'],
+          });
+        }
+      });
+      entity.complianceScore = (compliance / mandatoryTagCount) * 100;
+    });
+
+    this.setState({
+      entities: entitiesCopy,
+      accountEntities: entitiesCopy,
+      loading: false,
+    });
+  };
 
   getComplianceBand = (score) => {
-    const { complianceBands } = this.state.nerdStoreConfigData
+    const { complianceBands } = this.state.nerdStoreConfigData;
     if (score >= complianceBands.highBand.lowerLimit) return 'high__band';
     else if (
       complianceBands.midBand.lowerLimit <= score &&
@@ -344,7 +193,7 @@ class Entities extends React.Component {
   };
 
   getCompliance(entities, itemType, itemName) {
-    const { nerdStoreConfigData, complianceItemStatus } = this.state;
+    const { complianceItemStatus } = this.state;
 
     let e1 = [];
     switch (itemType) {
@@ -353,20 +202,21 @@ class Entities extends React.Component {
         e1 = entities.filter((entity) => entity.domain === itemName);
         break;
       case 'account':
-        e1 = this.filterEntitiesByDomains(entities, nerdStoreConfigData.entityTypes);
+        e1 = entities;
         break;
     }
     const complianceSum = e1.reduce((acc, e) => acc + e.complianceScore, 0);
-    const score = complianceSum > 0.0
-      ? parseFloat(complianceSum / e1.length).toFixed(2)
-      : 0.0;
-    const band = this.getComplianceBand(score)
+    const score =
+      complianceSum > 0.0
+        ? parseFloat(complianceSum / e1.length).toFixed(2)
+        : 0.0;
+    const band = this.getComplianceBand(score);
     const active =
       itemType === 'account'
         ? complianceItemStatus.global
         : complianceItemStatus.entityType.find(
-          (domain) => domain.name === itemName
-        ).active;
+            (domain) => domain.name === itemName
+          ).active;
 
     return {
       type: itemType,
@@ -378,73 +228,40 @@ class Entities extends React.Component {
     };
   }
 
-  getEntitiesByGuid = (entities, entityGuidList) => {
-    return entities.filter((entity) => {
-      if (entityGuidList.includes(entity.guid)) return entity;
-    });
-  };
+  getTableEntities = () => {
+    const { accountEntities, complianceItemStatus, displayFilter } = this.state;
 
-  updateCurrentScopeBySelectedAccounts(selectedAccounts) {
-    let updatedEntities = [];
-
-    if (selectedAccounts.length === 0) {
-      updatedEntities = this.props.nerdGraphEntityData.entities;
-    } else {
-      let entityGuids = [];
-      selectedAccounts.forEach((item) => {
-        entityGuids = [
-          ...entityGuids,
-          ...this.props.nerdGraphEntityData.accounts[item.split(':')[0]],
-        ];
-      });
-      updatedEntities = this.getEntitiesByGuid(
-        this.props.nerdGraphEntityData.entities,
-        entityGuids
-      );
-    }
-
-    return updatedEntities;
-  }
-
-  getFilteredEntities(entities, complianceItemStatus, displayFilter) {
-    const { nerdStoreConfigData } = this.state;
-    let filteredEntities;
-
-    // filter entities by entityTypes from nerdStore Config
-    entities = this.filterEntitiesByDomains(entities, nerdStoreConfigData.entityTypes);
+    let filteredEntities = utils.deepCopy(accountEntities);
 
     // filter displayed entities by entity types (if any)
     complianceItemStatus.entityType.forEach((et) => {
       if (et.selected) {
-        entities = entities.filter((entity) => entity.domain === et.name);
+        filteredEntities = accountEntities.filter(
+          (entity) => entity.domain === et.name
+        );
       }
     });
 
     switch (displayFilter) {
-      case 'FULL':
-        filteredEntities = entities;
-        break;
-
       case 'IN_COMPLIANCE':
-        filteredEntities = entities.filter(
+        filteredEntities = filteredEntities.filter(
           (entity) => entity.complianceScore === 100
         );
         break;
 
       case 'OUT_OF_COMPLIANCE':
-        filteredEntities = entities.filter(
+        filteredEntities = filteredEntities.filter(
           (entity) => entity.complianceScore !== 100
         );
         break;
-
-      default:
-        throw new Error(`invalid display filter: ${displayFilter}`);
     }
 
-    return filteredEntities;
-  }
+    filteredEntities = sortBy(filteredEntities, ['account.name', 'domain']);
 
-  getFiltersList() {
+    return filteredEntities;
+  };
+
+  getTableFilters() {
     const { complianceItemStatus, displayFilter } = this.state;
     const entityFilters = [];
     complianceItemStatus.entityType.forEach((et) => {
@@ -456,36 +273,57 @@ class Entities extends React.Component {
     return entityFilters.length ? entityFilters : ['None'];
   }
 
+  onSelectAccount = (data) => {
+    const { entities } = this.state;
+    let filteredEntities = [];
+
+    if (data.value.length === 0) {
+      filteredEntities = utils.deepCopy(entities);
+    } else {
+      data.value.forEach((value) => {
+        filteredEntities = filteredEntities.concat(
+          entities.filter(
+            (entity) => entity.account.id.toString() === value.split(':')[0]
+          )
+        );
+      });
+    }
+
+    this.setState({
+      accountEntities: filteredEntities,
+      selectedAccounts: data.value,
+    });
+  };
+
   onSelectEntityType = (itemType, itemName) => {
-    const { entities, complianceItemStatus } = this.state;
-    let { displayFilter } = this.state;
+    const { complianceItemStatus } = this.state;
+    const complianceItemCopy = utils.deepCopy(complianceItemStatus);
 
     switch (itemType) {
-      case 'account':
-        displayFilter = 'FULL';
-        complianceItemStatus.global = true;
-        complianceItemStatus.entityType.forEach((domain) => {
+      case 'account': {
+        complianceItemCopy.global = true;
+        complianceItemCopy.entityType.forEach((domain) => {
           domain.selected = false;
           domain.active = true;
         });
 
         break;
-
-      case 'domain':
-        const et = complianceItemStatus.entityType.find(
+      }
+      case 'domain': {
+        const et = complianceItemCopy.entityType.find(
           (domain) => domain.name === itemName
         );
 
         if (et.selected) {
           // was selected - now being unselected
-          complianceItemStatus.global = true;
-          complianceItemStatus.entityType.forEach((domain) => {
+          complianceItemCopy.global = true;
+          complianceItemCopy.entityType.forEach((domain) => {
             domain.selected = false;
             domain.active = true;
           });
         } else {
-          complianceItemStatus.global = false;
-          complianceItemStatus.entityType.forEach((domain) => {
+          complianceItemCopy.global = false;
+          complianceItemCopy.entityType.forEach((domain) => {
             if (domain.name === itemName) {
               domain.selected = true;
               domain.active = true;
@@ -496,51 +334,25 @@ class Entities extends React.Component {
           });
         }
         break;
+      }
     }
 
-    const filteredEntities = this.getFilteredEntities(
-      entities,
-      complianceItemStatus,
-      displayFilter
-    );
+    this.setState({ complianceItemStatus: complianceItemCopy });
+  };
 
+  onFilterEntityTable = (filter) => {
     this.setState({
-      complianceItemStatus,
-      displayFilter,
-      filteredEntities: filteredEntities,
+      displayFilter: filter,
     });
   };
 
-  onSelectAccount = (data) => {
-    const { complianceItemStatus, displayFilter } = this.state;
-    this.updateConfig('selectedAccounts', data.value);
-    const entities = this.updateCurrentScopeBySelectedAccounts(data.value);
-    const filteredEntities = this.getFilteredEntities(
-      entities,
-      complianceItemStatus,
-      displayFilter
-    );
-    this.setState({
-      selectedAccounts: data.value,
-      entities: entities,
-      filteredEntities: filteredEntities,
+  // todo - be smarter about what changed
+  onUpdateConfig = (data) => {
+    console.log('>>> Entities.updateState: ', data);
+    this.setState({ nerdStoreConfigData: data }, () => {
+      debounce(this.processTags(), 700)
     });
   };
-
-  onFilterEntityTable = (displayFilter) => {
-    const { entities, complianceItemStatus } = this.state;
-
-    const filteredEntities = this.getFilteredEntities(
-      entities,
-      complianceItemStatus,
-      displayFilter
-    );
-
-    this.setState({
-      displayFilter: displayFilter,
-      filteredEntities,
-    });
-  }
 
   renderComplianceScore(entities, itemType, itemName) {
     const compliance = this.getCompliance(entities, itemType, itemName);
@@ -549,54 +361,57 @@ class Entities extends React.Component {
       <ComplianceScore
         key={itemName}
         select={this.onSelectEntityType}
-        compliance={compliance} />
+        compliance={compliance}
+      />
     );
   }
+
+  openConfig = () => this.setState({ showConfigModal: true });
+
+  closeConfig = () => this.setState({ showConfigModal: false });
 
   render() {
     const {
       loading,
-      entities,
-      filteredEntities,
+      accountEntities,
       accountList,
-      templateDropdownList,
       selectedAccounts,
-      selectedTemplates,
       showConfigModal,
       nerdStoreConfigData,
     } = this.state;
-    const { user, userAccount } = this.props;
-    const selectedAccount = accountList.find(account => account.id === userAccount);
-
+    const tableEntities = this.getTableEntities()
+    const { user } = this.props;
     const modalStyle = { width: '90%', height: '90%' };
 
-    return (loading ?
-        <Spinner />
-      :
+    return loading ? (
+      <Spinner />
+    ) : (
       <div className="container">
-        <MenuBar 
-          accounts={accountList} 
-          selectedAccount={selectedAccount} 
+        <MenuBar
+          accounts={accountList}
           onAccountChange={this.onSelectAccount}
-          templates={templateDropdownList} 
-          selectedTemplates={nerdStoreConfigData.selectedTempaltes} 
-          onTemplateChange={this.onSelectTemplate} 
-          openConfig={this.openConfig} 
+          openConfig={this.openConfig}
         />
 
         <div className="score__container">
           <div className="score__panel">
             <Stack>
               <StackItem columnSpan={12}>
-                {this.renderComplianceScore(entities, 'account', 'account')}
+                {this.renderComplianceScore(
+                  accountEntities,
+                  'account',
+                  'account'
+                )}
               </StackItem>
               <StackItem>
                 <Stack>
-                  {nerdStoreConfigData.entityTypes.map(
-                    (domain) => {
-                      return this.renderComplianceScore(entities, 'domain', domain);
-                    }
-                  )}
+                  {nerdStoreConfigData.entityTypes.map((domain) => {
+                    return this.renderComplianceScore(
+                      accountEntities,
+                      'domain',
+                      domain
+                    );
+                  })}
                 </Stack>
               </StackItem>
             </Stack>
@@ -606,23 +421,28 @@ class Entities extends React.Component {
         <div className="table__container">
           <EntityHeader
             filter={this.onFilterEntityTable}
-            count={filteredEntities.length}
+            count={tableEntities.length}
             accounts={
               selectedAccounts.length > 0 ? selectedAccounts.join(', ') : ''
             }
-            entityType={this.getFiltersList().join(', ')}
+            entityType={this.getTableFilters().join(', ')}
             complianceBands={nerdStoreConfigData.complianceBands}
-            entities={filteredEntities.sort(function (a, b) {
-              return a.account.id - b.account.id;
-            })}
+            entities={tableEntities}
           />
-          <EntityTable entities={filteredEntities} complianceBands={nerdStoreConfigData.complianceBands} />
+          <EntityTable
+            entities={tableEntities}
+            complianceBands={nerdStoreConfigData.complianceBands}
+          />
         </div>
         {showConfigModal ? (
           <Modal style={modalStyle} onClose={this.closeConfig}>
-            <Config accounts={accountList} user={user} userAccount={userAccount} onUpdate={(data) => this.updateState(data)} />
+            <Config
+              accounts={accountList}
+              user={user}
+              onUpdate={this.onUpdateConfig}
+            />
           </Modal>
-        ): null}
+        ) : null}
       </div>
     );
   }
@@ -631,10 +451,7 @@ class Entities extends React.Component {
 Entities.propTypes = {
   nerdGraphEntityData: PropTypes.object.isRequired,
   user: PropTypes.object.isRequired,
-  userAccount: PropTypes.number.isRequired,
-  // nerdStoreConfigData: PropTypes.object.isRequired,
-  // updateParentState: PropTypes.func.isRequired,
-  // onAccountChange: PropTypes.func.isRequired,
+  nerdStoreConfigData: PropTypes.object.isRequired,
 };
 
 export default Entities;
