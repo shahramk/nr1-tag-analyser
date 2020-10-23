@@ -6,3 +6,19 @@
 @import './components/styles.scss';
 @import './components/Modal/styles.scss';
 @import './components/Config/styles.scss';
+
+.config__popup__message {
+    width: 500px; 
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border: 2px solid black;
+    margin: -200px 0 0 -250px;
+    padding: 10px;
+    font-size: 14px;
+    z-index: 1000;
+}
+
+.config_message_button {
+    margin-bottom: 10px;
+}

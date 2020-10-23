@@ -25,7 +25,7 @@ const MenuBar = ({
               style={{ minWidth: '20rem' }}
               placeholder="Select Accounts"
               options={accounts}
-              defaultValue={selectedAccount.value}
+              // defaultValue={selectedAccount.value}
               multiple
               search
               selection
