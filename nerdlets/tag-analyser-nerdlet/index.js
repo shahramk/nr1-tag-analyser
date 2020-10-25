@@ -28,7 +28,6 @@ export default class TagAnalyser extends React.PureComponent {
       entities: [],
       accounts: {},
       entityTypes: {},
-      accountList: [],
     },
     nerdStoreConfigData: {},
     showConfigEntryMessage: false,
@@ -69,7 +68,6 @@ export default class TagAnalyser extends React.PureComponent {
       });
 
       if (data) {
-        // console.log(data);
         const accountList = [];
         data.actor.accounts.forEach(account => {
           accountList.push({
@@ -97,7 +95,7 @@ export default class TagAnalyser extends React.PureComponent {
 
   getConfigFromNerdStore = async () => {
     const data = await this.fetchConfig();
-    // console.log("index.getConfigFromNerdStore: data: ", data);
+
     const templateExists = data && data.templates && data.templates.length > 0;
     const complianceBandsExists = data && data.complianceBands && Object.keys(data.complianceBands).length === 3;
     const entityTypesExists = data && data.entityTypes && data.entityTypes.length > 0;
@@ -150,7 +148,6 @@ export default class TagAnalyser extends React.PureComponent {
           entities: [],
           accounts: {},
           entityTypes: {},
-          accountList: [],
         },
         entityCount: 0,
         loadedEntities: 0,
@@ -267,15 +264,6 @@ export default class TagAnalyser extends React.PureComponent {
       const acctId = entity.account.id.toString()
       if (!newNerdGraphEntityData.accounts[acctId]) newNerdGraphEntityData.accounts[acctId] = []
       newNerdGraphEntityData.accounts[acctId].push(entity.guid)
-
-      if ( typeof(newNerdGraphEntityData.accountList.find(item => item.id.toString() === acctId)) === "undefined" ) {
-        newNerdGraphEntityData.accountList.push({
-          id: entity.account.id,
-          key: newNerdGraphEntityData.accountList.length, 
-          value: `${entity.account.id}: ${entity.account.name}`, 
-          text: entity.account.name,
-        });
-      }
 
       const domain = entity.domain
       if (!newNerdGraphEntityData.entityTypes[domain]) newNerdGraphEntityData.entityTypes[domain] = []
@@ -414,14 +402,13 @@ export default class TagAnalyser extends React.PureComponent {
                   Loading tags... ({loadedEntities} / {entityCount} entities examined)
                 </HeadingText>
               : 
-                // <Entities
-                //   nerdGraphEntityData={nerdGraphEntityData}
-                //   user={user}
-                //   userAccount={helpers.masterAccountId} // SKTEMP -- 10-22-20
-                //   accounts={accounts} // SKTEMP -- 10-22-20
-                //   nerdStoreConfigData={nerdStoreConfigData} // SKTEMP -- 10-22-20
-                // />
-                <div><h1>### Uncomment Entities in index.js->render() ###</h1></div>
+                <Entities
+                  nerdGraphEntityData={nerdGraphEntityData}
+                  user={user}
+                  userAccount={helpers.masterAccountId}
+                  accounts={accounts}
+                  nerdStoreConfigData={nerdStoreConfigData}
+                />
               }
             </>
           );
