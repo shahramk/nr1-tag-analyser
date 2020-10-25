@@ -19,7 +19,6 @@ export default class Config extends React.Component {
 
   state = {
     currentTab: 0,
-    configSent: false,
   };
 
   componentDidMount() {
@@ -33,21 +32,14 @@ export default class Config extends React.Component {
       documentId: helpers.nerdStoreInfo.documentName,   // 'config',
     });
 
-    // const nerdStoreConfigData = (config || {}).data || {templates: [], complianceBands: helpers.defaultComplianceBands, entityTypes: []};
-    
     if (!config) config = {};
     if (!config.data) config.data = {};
     if (!config.data.templates) config.data.termplates = [];
-    if (!config.data.complianceBands || Object.keys(config.data.complianceBands) == 0) config.data.complianceBands = helpers.defaultComplianceBands;
+    if (!config.data.complianceBands || Object.keys(config.data.complianceBands).length == 0) config.data.complianceBands = helpers.defaultComplianceBands;
     if (!config.data.entityTypes) config.data.entityTypes = [];
     const nerdStoreConfigData = config.data;
 
-    this.setState({ nerdStoreConfigData }, () => {
-      if (!this.state.configSent) {
-        this.props.onUpdate(nerdStoreConfigData);
-        this.setState({ configSent: true });
-      }
-    });
+    this.setState({ nerdStoreConfigData });
   };
 
   updateConfig = async (type, updatedData) => {
@@ -88,8 +80,6 @@ export default class Config extends React.Component {
     };
     const tabIsActive = (t) => (currentTab === t ? 'active' : '');
 
-    // console.log("complianceBands: ", complianceBands)
-    // console.log("helpers.defaultComplianceBands: ", helpers.defaultComplianceBands)
     return (
       <>
         {!complianceBands ? 
