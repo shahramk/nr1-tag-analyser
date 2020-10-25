@@ -31,16 +31,17 @@ class Entities extends React.PureComponent {
 
   // todo: state management needs to be moved to index.js
   componentDidMount() {
-    const { nerdStoreConfigData, nerdGraphEntityData } = this.props;
+    const { nerdStoreConfigData, nerdGraphEntityData, accounts } = this.props;
 
     const accountEntities = utils.deepCopy(nerdGraphEntityData.entities);
-    const accountList = utils.deepCopy(nerdGraphEntityData.accountList);
+    const accountList = utils.deepCopy(accounts);
     const nerdStoreConfigCopy = utils.deepCopy(nerdStoreConfigData);
 
     const complianceItemStatus = {};
     complianceItemStatus.global = true;
     complianceItemStatus.entityType = [];
     nerdStoreConfigData.entityTypes.forEach((domainName) => {
+    // Object.keys(nerdGraphEntityData.entityTypes).forEach((domainName) => { // SKTEMP
       complianceItemStatus.entityType.push({
         name: domainName,
         selected: false,
@@ -66,7 +67,7 @@ class Entities extends React.PureComponent {
   processTags = () => {
     const { nerdStoreConfigData } = this.state;
     const tags = {};
-
+    
     const globalTemplates = nerdStoreConfigData.templates.filter(
       (template) => template.scope === 'global'
     );
@@ -288,7 +289,6 @@ class Entities extends React.PureComponent {
         );
       });
     }
-
     this.setState({
       accountEntities: filteredEntities,
       selectedAccounts: data.value,
@@ -348,11 +348,54 @@ class Entities extends React.PureComponent {
 
   // todo - be smarter about what changed
   onUpdateConfig = (data) => {
-    console.log('>>> Entities.updateState: ', data);
-    this.setState({ nerdStoreConfigData: data }, () => {
-      debounce(this.processTags(), 700)
+    console.log('>>> Entities.onUpdateConfig: ', data);
+
+    const { selectedAccounts, complianceItemStatus, } = this.state;
+    const { nerdGraphEntityData: { entities } } = this.props;
+    let filteredEntities = [];
+    if (selectedAccounts.length === 0) {
+      filteredEntities = utils.deepCopy(entities);
+    }
+    else {
+      selectedAccounts((selectedAccount) => {
+        accountEntities = filteredEntities.concat(
+          entities.filter(
+            (entity) => entity.account.id.toString() === selectedAccount.split(':')[0]
+          )
+        );
+      });
+    }
+    
+    const newcomplianceItemStatus = utils.deepCopy(complianceItemStatus);
+    // remove unselected entity types
+    newcomplianceItemStatus.entityType.forEach((e, index) => {
+      const entityType = data.entityTypes.find(e2 => e2 === e.name)
+      if (!entityType) {
+        newcomplianceItemStatus.entityType.splice(index, 1);
+      }
     });
-  };
+    // add newly selected entity types
+    data.entityTypes.forEach(domainName => {
+      const complianceEntity = newcomplianceItemStatus.entityType.find( e => e.name === domainName)
+      if (!complianceEntity) {
+        newcomplianceItemStatus.entityType.push({ 
+          name: domainName, 
+          selected: false, 
+          active: newcomplianceItemStatus.global, // if global=active -> all active -- else new domain inactive
+        })
+      }
+    })
+
+    this.setState({ 
+      entities,
+      accountEntities: filteredEntities,
+      complianceItemStatus: newcomplianceItemStatus,
+      nerdStoreConfigData: data,
+    }, () => {
+        // debounce(this.processTags(), 700) // SK -- 10-24-20 -- debounce doesn't work for me
+        setTimeout(this.processTags(), 700)
+    });
+  }
 
   renderComplianceScore(entities, itemType, itemName) {
     const compliance = this.getCompliance(entities, itemType, itemName);
@@ -452,6 +495,7 @@ Entities.propTypes = {
   nerdGraphEntityData: PropTypes.object.isRequired,
   user: PropTypes.object.isRequired,
   nerdStoreConfigData: PropTypes.object.isRequired,
+  accounts: PropTypes.array.isRequired,
 };
 
 export default Entities;
