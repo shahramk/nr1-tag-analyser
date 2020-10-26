@@ -375,18 +375,17 @@ class Entities extends React.PureComponent {
     const tempConfig = utils.deepCopy(tempConfigData);
 
     if (tempConfig) {
-      this.setState({ loading: true }, () => {
-        this.setState(
-          {
-            nerdStoreConfigData: tempConfig,
-            tempConfigData: null,
-            showConfigModal: false,
-          },
-          () => {
-            this.processEntityTypes();
-          }
-        );
-      });
+      this.setState(
+        {
+          loading: true,
+          nerdStoreConfigData: tempConfig,
+          tempConfigData: null,
+          showConfigModal: false,
+        },
+        () => {
+          this.processEntityTypes();
+        }
+      );
     } else {
       this.setState({ showConfigModal: false });
     }
