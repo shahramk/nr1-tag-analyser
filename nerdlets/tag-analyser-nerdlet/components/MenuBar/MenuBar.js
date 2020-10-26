@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { Button } from 'nr1';
 import { Dropdown } from 'semantic-ui-react';
 
-const MenuBar = ({ accounts, openConfig, onAccountChange }) => {
+const MenuBar = ({ accounts, selectedAccounts, openConfig, onAccountChange }) => {
   return (
     <div className="menu__container">
       <div className="menu__bar">
@@ -16,6 +16,7 @@ const MenuBar = ({ accounts, openConfig, onAccountChange }) => {
               style={{ minWidth: '20rem' }}
               placeholder="Select Accounts"
               options={accounts}
+              defaultValue={selectedAccounts}
               multiple
               search
               selection
@@ -47,6 +48,7 @@ const MenuBar = ({ accounts, openConfig, onAccountChange }) => {
 
 MenuBar.propTypes = {
   accounts: PropTypes.array.isRequired,
+  selectedAccounts: PropTypes.array.isRequired,
   openConfig: PropTypes.func.isRequired,
   onAccountChange: PropTypes.func.isRequired,
 };

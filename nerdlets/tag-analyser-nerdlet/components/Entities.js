@@ -145,7 +145,7 @@ class Entities extends React.PureComponent {
 
   // score entities based on tag rules
   processEntities = () => {
-    const { nerdStoreConfigData, entities, tags } = this.state;
+    const { nerdStoreConfigData, entities, tags, selectedAccounts } = this.state;
 
     const entitiesCopy = utils.deepCopy(
       entities.filter((entity) => {
@@ -192,12 +192,34 @@ class Entities extends React.PureComponent {
       entity.complianceScore = (compliance / mandatoryTagCount) * 100;
     });
 
+    const accountEntities = this.getEntitiesBySelectedAccounts(entitiesCopy, selectedAccounts);
+
     this.setState({
       domainEntities: entitiesCopy,
-      accountEntities: entitiesCopy,
+      accountEntities, //: entitiesCopy,
       loading: false,
     });
   };
+
+  getEntitiesBySelectedAccounts = (entities, selectedAccounts) => {
+    // update entities filtered by "selectedAccounts" from accounts dropdown
+    let filteredEntities = [];
+    if (selectedAccounts.length === 0) {
+      filteredEntities = utils.deepCopy(entities);
+    }
+    else {
+      selectedAccounts.forEach(selectedAccount => {
+        filteredEntities = filteredEntities.concat(
+          entities.filter(
+            (entity) => entity.account.id.toString() === selectedAccount.split(':')[0]
+          )
+        );
+      });
+    }
+
+    return filteredEntities;
+  }
+
 
   getComplianceBand = (score) => {
     const { complianceBands } = this.state.nerdStoreConfigData;
@@ -422,6 +444,7 @@ class Entities extends React.PureComponent {
       <div className="container">
         <MenuBar
           accounts={accountList}
+          selectedAccounts={selectedAccounts}
           onAccountChange={this.onSelectAccount}
           openConfig={this.onOpenConfig}
         />
