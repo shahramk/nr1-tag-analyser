@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { debounce, sortBy } from 'lodash';
+import { sortBy } from 'lodash';
 import { Spinner, Stack, StackItem } from 'nr1';
 
 import MenuBar from './MenuBar/MenuBar';
@@ -16,8 +16,10 @@ class Entities extends React.PureComponent {
   state = {
     loading: true,
     entities: [],
+    domainEntities: [],
     accountEntities: [],
     nerdStoreConfigData: {},
+    tempConfigData: null,
     displayFilter: 'FULL',
     selectedAccounts: [],
     accountList: [],
@@ -37,11 +39,26 @@ class Entities extends React.PureComponent {
     const accountList = utils.deepCopy(accounts);
     const nerdStoreConfigCopy = utils.deepCopy(nerdStoreConfigData);
 
+    this.setState(
+      {
+        entities: nerdGraphEntityData.entities,
+        nerdStoreConfigData: nerdStoreConfigCopy,
+        accountEntities,
+        accountList,
+      },
+      () => {
+        this.processEntityTypes();
+      }
+    );
+  }
+
+  processEntityTypes = () => {
+    const { nerdStoreConfigData } = this.state;
+
     const complianceItemStatus = {};
     complianceItemStatus.global = true;
     complianceItemStatus.entityType = [];
     nerdStoreConfigData.entityTypes.forEach((domainName) => {
-    // Object.keys(nerdGraphEntityData.entityTypes).forEach((domainName) => { // SKTEMP
       complianceItemStatus.entityType.push({
         name: domainName,
         selected: false,
@@ -49,25 +66,23 @@ class Entities extends React.PureComponent {
       });
     });
 
+    nerdStoreConfigData.entityTypes = nerdStoreConfigData.entityTypes.sort();
+
     this.setState(
       {
-        entities: nerdGraphEntityData.entities,
-        nerdStoreConfigData: nerdStoreConfigCopy,
-        accountEntities,
-        accountList,
         complianceItemStatus: complianceItemStatus,
       },
       () => {
         this.processTags();
       }
     );
-  }
+  };
 
   // organize tags by account scope and remove duplicates
   processTags = () => {
     const { nerdStoreConfigData } = this.state;
     const tags = {};
-    
+
     const globalTemplates = nerdStoreConfigData.templates.filter(
       (template) => template.scope === 'global'
     );
@@ -142,7 +157,9 @@ class Entities extends React.PureComponent {
 
     entitiesCopy.forEach((entity) => {
       // check for account-specific tags; otherwise default to global
-      let accountTags = Object.keys(tags).find((t) => t === entity.account.id);
+      let accountTags =
+        tags[Object.keys(tags).find((t) => t === entity.account.id.toString())];
+
       if (!accountTags) accountTags = tags.global;
 
       entity.mandatoryTags = [];
@@ -176,7 +193,7 @@ class Entities extends React.PureComponent {
     });
 
     this.setState({
-      entities: entitiesCopy,
+      domainEntities: entitiesCopy,
       accountEntities: entitiesCopy,
       loading: false,
     });
@@ -275,15 +292,15 @@ class Entities extends React.PureComponent {
   }
 
   onSelectAccount = (data) => {
-    const { entities } = this.state;
+    const { domainEntities } = this.state;
     let filteredEntities = [];
 
     if (data.value.length === 0) {
-      filteredEntities = utils.deepCopy(entities);
+      filteredEntities = utils.deepCopy(domainEntities);
     } else {
       data.value.forEach((value) => {
         filteredEntities = filteredEntities.concat(
-          entities.filter(
+          domainEntities.filter(
             (entity) => entity.account.id.toString() === value.split(':')[0]
           )
         );
@@ -346,56 +363,34 @@ class Entities extends React.PureComponent {
     });
   };
 
+  onOpenConfig = () => this.setState({ showConfigModal: true });
+
   // todo - be smarter about what changed
   onUpdateConfig = (data) => {
-    console.log('>>> Entities.onUpdateConfig: ', data);
+    this.setState({ tempConfigData: data });
+  };
 
-    const { selectedAccounts, complianceItemStatus, } = this.state;
-    const { nerdGraphEntityData: { entities } } = this.props;
-    let filteredEntities = [];
-    if (selectedAccounts.length === 0) {
-      filteredEntities = utils.deepCopy(entities);
-    }
-    else {
-      selectedAccounts((selectedAccount) => {
-        accountEntities = filteredEntities.concat(
-          entities.filter(
-            (entity) => entity.account.id.toString() === selectedAccount.split(':')[0]
-          )
+  onCloseConfig = () => {
+    const { tempConfigData } = this.state;
+    const tempConfig = utils.deepCopy(tempConfigData);
+
+    if (tempConfig) {
+      this.setState({ loading: true }, () => {
+        this.setState(
+          {
+            nerdStoreConfigData: tempConfig,
+            tempConfigData: null,
+            showConfigModal: false,
+          },
+          () => {
+            this.processEntityTypes();
+          }
         );
       });
+    } else {
+      this.setState({ showConfigModal: false });
     }
-    
-    const newcomplianceItemStatus = utils.deepCopy(complianceItemStatus);
-    // remove unselected entity types
-    newcomplianceItemStatus.entityType.forEach((e, index) => {
-      const entityType = data.entityTypes.find(e2 => e2 === e.name)
-      if (!entityType) {
-        newcomplianceItemStatus.entityType.splice(index, 1);
-      }
-    });
-    // add newly selected entity types
-    data.entityTypes.forEach(domainName => {
-      const complianceEntity = newcomplianceItemStatus.entityType.find( e => e.name === domainName)
-      if (!complianceEntity) {
-        newcomplianceItemStatus.entityType.push({ 
-          name: domainName, 
-          selected: false, 
-          active: newcomplianceItemStatus.global, // if global=active -> all active -- else new domain inactive
-        })
-      }
-    })
-
-    this.setState({ 
-      entities,
-      accountEntities: filteredEntities,
-      complianceItemStatus: newcomplianceItemStatus,
-      nerdStoreConfigData: data,
-    }, () => {
-        // debounce(this.processTags(), 700) // SK -- 10-24-20 -- debounce doesn't work for me
-        setTimeout(this.processTags(), 700)
-    });
-  }
+  };
 
   renderComplianceScore(entities, itemType, itemName) {
     const compliance = this.getCompliance(entities, itemType, itemName);
@@ -409,10 +404,6 @@ class Entities extends React.PureComponent {
     );
   }
 
-  openConfig = () => this.setState({ showConfigModal: true });
-
-  closeConfig = () => this.setState({ showConfigModal: false });
-
   render() {
     const {
       loading,
@@ -422,7 +413,7 @@ class Entities extends React.PureComponent {
       showConfigModal,
       nerdStoreConfigData,
     } = this.state;
-    const tableEntities = this.getTableEntities()
+    const tableEntities = this.getTableEntities();
     const { user } = this.props;
     const modalStyle = { width: '90%', height: '90%' };
 
@@ -433,7 +424,7 @@ class Entities extends React.PureComponent {
         <MenuBar
           accounts={accountList}
           onAccountChange={this.onSelectAccount}
-          openConfig={this.openConfig}
+          openConfig={this.onOpenConfig}
         />
 
         <div className="score__container">
@@ -478,7 +469,7 @@ class Entities extends React.PureComponent {
           />
         </div>
         {showConfigModal ? (
-          <Modal style={modalStyle} onClose={this.closeConfig}>
+          <Modal style={modalStyle} onClose={this.onCloseConfig}>
             <Config
               accounts={accountList}
               user={user}
