@@ -357,7 +357,7 @@ class Entities extends React.PureComponent {
       filteredEntities = utils.deepCopy(entities);
     }
     else {
-      selectedAccounts((selectedAccount) => {
+      selectedAccounts.forEach((selectedAccount) => {
         accountEntities = filteredEntities.concat(
           entities.filter(
             (entity) => entity.account.id.toString() === selectedAccount.split(':')[0]
