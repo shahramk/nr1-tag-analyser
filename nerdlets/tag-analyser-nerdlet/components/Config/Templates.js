@@ -202,11 +202,10 @@ export default class Templates extends React.Component {
           </div>
           <ul>
             {templates.map((template, t) => (
-              <li key={t} className={selectedTemplate === t ? 'current' : ''}>
+              <li key={t} className={selectedTemplate === t ? 'current' : ''} onClick={(e) => this.selectTemplate(e, t)}>
                 <a
                   href="#"
                   className="u-unstyledLink"
-                  onClick={(e) => this.selectTemplate(e, t)}
                 >
                   {template.name}
                 </a>
