@@ -21,6 +21,7 @@ class Entities extends React.PureComponent {
     nerdStoreConfigData: {},
     tempConfigData: null,
     displayFilter: 'FULL',
+    selectedDomain: 'none',
     selectedAccounts: [],
     accountList: [],
     complianceItemStatus: {
@@ -53,16 +54,16 @@ class Entities extends React.PureComponent {
   }
 
   processEntityTypes = () => {
-    const { nerdStoreConfigData } = this.state;
+    const { nerdStoreConfigData, selectedDomain } = this.state;
 
     const complianceItemStatus = {};
-    complianceItemStatus.global = true;
+    complianceItemStatus.global = selectedDomain === 'none' ? true : false;
     complianceItemStatus.entityType = [];
     nerdStoreConfigData.entityTypes.forEach((domainName) => {
       complianceItemStatus.entityType.push({
         name: domainName,
-        selected: false,
-        active: true,
+        selected: domainName === selectedDomain ? true : false,
+        active: domainName === selectedDomain || complianceItemStatus.global ? true : false,
       });
     });
 
@@ -269,6 +270,7 @@ class Entities extends React.PureComponent {
   }
 
   getTableEntities = () => {
+    // extract entities to display
     const { accountEntities, complianceItemStatus, displayFilter } = this.state;
 
     let filteredEntities = utils.deepCopy(accountEntities);
@@ -302,6 +304,7 @@ class Entities extends React.PureComponent {
   };
 
   getTableFilters() {
+    // display all filers on the report heading
     const { complianceItemStatus, displayFilter } = this.state;
     const entityFilters = [];
     complianceItemStatus.entityType.forEach((et) => {
@@ -338,6 +341,8 @@ class Entities extends React.PureComponent {
     const { complianceItemStatus } = this.state;
     const complianceItemCopy = utils.deepCopy(complianceItemStatus);
 
+    let selectedDomain = 'none';
+
     switch (itemType) {
       case 'account': {
         complianceItemCopy.global = true;
@@ -366,6 +371,7 @@ class Entities extends React.PureComponent {
             if (domain.name === itemName) {
               domain.selected = true;
               domain.active = true;
+              selectedDomain = itemName;
             } else {
               domain.selected = false;
               domain.active = false;
@@ -376,7 +382,7 @@ class Entities extends React.PureComponent {
       }
     }
 
-    this.setState({ complianceItemStatus: complianceItemCopy });
+    this.setState({ selectedDomain, complianceItemStatus: complianceItemCopy });
   };
 
   onFilterEntityTable = (filter) => {
