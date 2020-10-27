@@ -31,6 +31,8 @@ export default class EntityTypes extends React.Component {
     const types = ['APM', 'MOBILE', 'BROWSER', 'INFRA', 'SYNTH'];
 
     return (
+      <>
+      <div className="message">Select which entity types should be evaluated for tag compliance.</div>
       <div className="entity-types">
         {types.map((type, t) => (
           <div key={t}>
@@ -42,6 +44,7 @@ export default class EntityTypes extends React.Component {
           </div>
         ))}
       </div>
+      </>
     );
   }
 }
