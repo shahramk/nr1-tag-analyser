@@ -11,17 +11,12 @@ export default class ComplianceBands extends React.Component {
 
   state = {
     complianceBands: this.props.complianceBands || helpers.defaultComplianceBands,
-    // complianceBands: this.props.complianceBands || {
-    //     highBand: { upperLimit: 100, lowerLimit: 90, color: 'seagreen' },
-    //   midBand: { upperLimit: 90, lowerLimit: 70, color: 'sandybrown' },
-    //   lowBand: { upperLimit: 70, lowerLimit: 0, color: 'orangered' },
-    // },
   };
 
   deepCopy = (obj) => {
     if (typeof obj !== 'object' || obj === null) return obj;
 
-    let ret = Array.isArray(obj) ? [] : {};
+    const ret = Array.isArray(obj) ? [] : {};
     for (let key in obj) {
       const val = obj[key];
       ret[key] = this.deepCopy(val);
@@ -34,7 +29,7 @@ export default class ComplianceBands extends React.Component {
     const { complianceBands } = this.state;
     const { onUpdate } = this.props;
 
-    let newComplianceBands = this.deepCopy(complianceBands);
+    const newComplianceBands = this.deepCopy(complianceBands);
     newComplianceBands[band][key] = parseFloat(e.target.value);
 
     this.setState(
@@ -50,8 +45,9 @@ export default class ComplianceBands extends React.Component {
 
     return (
       <div className="compliance-bands">
+        <div className="message">Compliance bands are used to color-code compliance scores. High compliance bands will be colored green, middle yellow, and low red.</div>
         <div className="band">
-          <div className="name">High Band</div>
+          <div className="name high__band">High Band</div>
           <div className="vals">
             <span>&gt;=</span>
             <input
@@ -63,7 +59,7 @@ export default class ComplianceBands extends React.Component {
           </div>
         </div>
         <div className="band">
-          <div className="name">Medium Band</div>
+          <div className="name mid__band">Medium Band</div>
           <div className="vals">
             <input
               type="number"
@@ -81,7 +77,7 @@ export default class ComplianceBands extends React.Component {
           </div>
         </div>
         <div className="band">
-          <div className="name">Low Band</div>
+          <div className="name low__band">Low Band</div>
           <div className="vals">
             <span>&lt;</span>
             <input
