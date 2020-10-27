@@ -95,7 +95,8 @@ class Entities extends React.PureComponent {
       const globalTags = tags.global;
       if (globalTags) {
         template.tags.forEach((tag) => {
-          this.addUniqueTag(globalTags, tag);
+          const addTag = this.addUniqueTag(globalTags, tag);
+          if (addTag) globalTags.push(addTag);
         });
       } else {
         tags.global = template.tags;
@@ -104,11 +105,13 @@ class Entities extends React.PureComponent {
 
     accountTemplates.forEach((template) => {
       template.accounts.forEach((account) => {
-        const accountTags = tags[account];
+        const accountTags = utils.deepCopy(tags[account]);
         if (accountTags) {
           template.tags.forEach((tag) => {
-            this.addUniqueTag(accountTags, tag);
+            const addTag = this.addUniqueTag(accountTags, tag);
+            if (addTag) accountTags.push(addTag);
           });
+          tags[account] = accountTags;
         } else {
           tags[account] = template.tags;
         }
@@ -121,7 +124,8 @@ class Entities extends React.PureComponent {
     for (const [key, value] of Object.entries(tags)) {
       if (key !== 'global') {
         tags.global.forEach((tag) => {
-          this.addUniqueTag(value, tag);
+          const addTag = this.addUniqueTag(value, tag);
+          if (addTag) tags[key].push(addTag);
         });
       }
     }
@@ -131,17 +135,22 @@ class Entities extends React.PureComponent {
 
   addUniqueTag(tags, tag) {
     const found = tags.find((t) => t.name === tag.name);
+
+    let addTag;
     if (found) {
       if (
         tag.mandatory !== found.mandatory &&
         tag.mandatory &&
         !found.mandatory
       ) {
-        found.mandatory = true;
+        addTag = utils.deepCopy(tag);
+        addTag.mandatory = true;
       }
     } else {
-      tags.push(tag);
+      addTag = utils.deepCopy(tag);
     }
+
+    return addTag;
   }
 
   // score entities based on tag rules
