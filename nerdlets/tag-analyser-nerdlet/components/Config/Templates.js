@@ -224,7 +224,8 @@ export default class Templates extends React.Component {
           {template ? (
             <>
               <div>
-                <TextField
+                <TextField 
+                  className="template-name"
                   label="Name"
                   placeholder="Template Name"
                   value={templateName}
