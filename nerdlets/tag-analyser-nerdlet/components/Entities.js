@@ -388,8 +388,9 @@ class Entities extends React.PureComponent {
   };
 
   onFilterEntityTable = (filter) => {
+    const { displayFilter } = this.state;
     this.setState({
-      displayFilter: filter,
+      displayFilter: displayFilter === filter ? 'FULL' : filter,
     });
   };
 
