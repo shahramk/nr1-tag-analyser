@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Spinner, AccountStorageMutation, AccountStorageQuery } from 'nr1';
+import { Spinner, AccountStorageMutation, AccountStorageQuery, Toast } from 'nr1';
 
 import utils from './utils';
 import helpers from '../../../shared/utils/helpers'
@@ -55,7 +55,14 @@ export default class Config extends React.Component {
       documentId: helpers.nerdStoreInfo.documentName,   // 'config',
       document: newData,
     });
-    this.setState({ nerdStoreConfigData: newData }, () => onUpdate ? onUpdate(newData) : null);
+    this.setState({ nerdStoreConfigData: newData }, () => {
+      Toast.showToast({
+        title: 'Config Update',
+        description: 'Changes saved - close the modal to refresh the report',
+        type: Toast.TYPE.NORMAL
+      })
+      return onUpdate ? onUpdate(newData) : null
+    });
   };
 
   switchTab = async (e, id) => {
@@ -82,46 +89,46 @@ export default class Config extends React.Component {
 
     return (
       <>
-        {!complianceBands ? 
-            <Spinner />
-        : (
-      <div className="config-screen">
-        <div className="tabs">
-          <ul className="tabs-links">
-            {tabs.map((tab, t) => (
-              <li key={t} className={tabIsActive(t)}>
-                <a {...tabProps} onClick={(e) => this.switchTab(e, t)}>
-                  {tab}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="tabs-content">
-          <div className={tabIsActive(0)}>
-            <Templates
-              templates={templates || []}
-              accounts={accounts}
-              userEmail={email}
-              onUpdate={this.updateConfig}
-            />
-          </div>
-          <div className={tabIsActive(1)}>
-            <EntityTypes
-              entityTypes={entityTypes || helpers.defaultEntityTypes}
-              onUpdate={this.updateConfig}
-            />
-          </div>
-          <div className={tabIsActive(2)}>
-            <ComplianceBands
-              complianceBands={complianceBands || helpers.defaultComplianceBands}
-              onUpdate={this.updateConfig}
-            />
-          </div>
-        </div>
-      </div>
-    )}
-    </>
+        {!complianceBands ?
+          <Spinner />
+          : (
+            <div className="config-screen">
+              <div className="tabs">
+                <ul className="tabs-links">
+                  {tabs.map((tab, t) => (
+                    <li key={t} className={tabIsActive(t)}>
+                      <a {...tabProps} onClick={(e) => this.switchTab(e, t)}>
+                        {tab}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="tabs-content">
+                <div className={tabIsActive(0)}>
+                  <Templates
+                    templates={templates || []}
+                    accounts={accounts}
+                    userEmail={email}
+                    onUpdate={this.updateConfig}
+                  />
+                </div>
+                <div className={tabIsActive(1)}>
+                  <EntityTypes
+                    entityTypes={entityTypes || helpers.defaultEntityTypes}
+                    onUpdate={this.updateConfig}
+                  />
+                </div>
+                <div className={tabIsActive(2)}>
+                  <ComplianceBands
+                    complianceBands={complianceBands || helpers.defaultComplianceBands}
+                    onUpdate={this.updateConfig}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+      </>
     )
   }
 }
