@@ -32,8 +32,8 @@ export default class EntityTypes extends React.Component {
 
     return (
       <>
-      <div className="message">Select which entity types should be evaluated for tag compliance.</div>
       <div className="entity-types">
+        <div className="message">Select which entity types should be evaluated for tag compliance.</div>
         {types.map((type, t) => (
           <div key={t}>
             <Checkbox
