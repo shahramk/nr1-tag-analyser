@@ -1,4 +1,8 @@
+@import '../../../shared/scss/base-layout.scss';
+
 .config-screen {
+  @include defaultPanel;
+
   display: flex;
   flex-direction: column;
   position: absolute;
@@ -8,19 +12,17 @@
   bottom: 0;
   height: 100%;
   overflow-x: hidden;
+  
 }
 
 .templates {
   display: grid;
   grid-template-columns: 2fr 3fr 5fr;
 
-  > div {
-    padding: 1em;
-  }
-
   .listing {
     height: auto;
-    padding: .5em;
+    padding: .5rem;
+    padding-right: 1.5rem;
     overflow: auto;
     min-width: 150px;
 
@@ -77,6 +79,8 @@
   }
 
   .template-tags {
+    padding: 2.5rem 1.5rem .5rem .5rem;
+
     .tag-entry {
       display: grid;
       grid-template-columns: max-content max-content max-content;
@@ -90,11 +94,13 @@
 
       button {
         height: 24px;
+        margin-bottom: -4px;
       }
     }
   }
 
   .template-meta, .template-tags {
+
     > div {
       padding: .5em;
     }
@@ -116,12 +122,17 @@
 
 }
 
+.template-meta {
+  border-left: 1px solid #e3e4e4;
+  padding: .5rem;
+  padding-left: 1.5rem;
+}
+
 .message {
   padding-bottom: 1rem;
 }
 
 .entity-types {
-  width: 450px;
   padding-bottom: .25rem;
 
   label {
@@ -130,7 +141,6 @@
 }
 
 .compliance-bands {
-  width: 450px;
 
   .band {
     display: grid;
@@ -216,7 +226,7 @@
 }
 
 .tabs-content {
-  padding-top: 2em;
+  padding-top: 1rem;
   overflow-y: auto;
   flex: 1;
 

@@ -190,15 +190,6 @@ export default class Templates extends React.Component {
             >
               Add Template
             </Button>
-            {template ? (
-              <Button
-                onClick={this.saveTemplate}
-                sizeType={Button.SIZE_TYPE.SMALL}
-                iconType={Button.ICON_TYPE.INTERFACE__SIGN__CHECKMARK}
-              >
-                Save
-              </Button>
-            ) : null}
           </div>
           <ul>
             {templates.map((template, t) => (
@@ -220,11 +211,18 @@ export default class Templates extends React.Component {
             ))}
           </ul>
         </div>
-        <div className="template-meta">
-          {template ? (
-            <>
+        {template && (
+          <>
+            <div className="template-meta">
+              <Button
+                onClick={this.saveTemplate}
+                sizeType={Button.SIZE_TYPE.SMALL}
+                iconType={Button.ICON_TYPE.INTERFACE__SIGN__CHECKMARK}
+              >
+                Save
+            </Button>
               <div>
-                <TextField 
+                <TextField
                   className="template-name"
                   label="Name"
                   placeholder="Template Name"
@@ -259,12 +257,8 @@ export default class Templates extends React.Component {
                     </div>
                   ))}
               </div>
-            </>
-          ) : null}
-        </div>
-        <div className="template-tags">
-          {template ? (
-            <>
+            </div>
+            <div className="template-tags">
               <div className="tag-entry">
                 <TextField
                   label="Add Tag"
@@ -309,9 +303,9 @@ export default class Templates extends React.Component {
                   </Button>
                 </div>
               ))}
-            </>
-          ) : null}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     );
   }
