@@ -30,6 +30,10 @@ class Entities extends React.PureComponent {
     },
     showConfigModal: false,
     tags: {},
+    entityIndex: {
+      startIdx: 0,
+      endIdx: 0,
+    },
   };
 
   // todo: state management needs to be moved to index.js
@@ -422,6 +426,10 @@ class Entities extends React.PureComponent {
     }
   };
 
+  onChangePage = (newEntityPageIndex) => {
+    this.setState({ entityIndex: newEntityPageIndex });
+  }
+
   renderComplianceScore(entities, itemType, itemName) {
     const compliance = this.getCompliance(entities, itemType, itemName);
 
@@ -442,6 +450,7 @@ class Entities extends React.PureComponent {
       selectedAccounts,
       showConfigModal,
       nerdStoreConfigData,
+      entityIndex,
     } = this.state;
     const tableEntities = this.getTableEntities();
     const { user } = this.props;
@@ -493,9 +502,10 @@ class Entities extends React.PureComponent {
             entityType={this.getTableFilters().join(', ')}
             complianceBands={nerdStoreConfigData.complianceBands}
             entities={tableEntities}
+            onChangePage={this.onChangePage}
           />
           <EntityTable
-            entities={tableEntities}
+            entities={tableEntities.splice(entityIndex.startIdx-1, entityIndex.endIdx-entityIndex.startIdx+1)}
             complianceBands={nerdStoreConfigData.complianceBands}
           />
         </div>

@@ -26,8 +26,6 @@ export default class TagAnalyser extends React.PureComponent {
     user: null,
     nerdGraphEntityData: {
       entities: [],
-      accounts: {},
-      entityTypes: {},
     },
     nerdStoreConfigData: {},
     showConfigEntryMessage: false,
@@ -146,8 +144,6 @@ export default class TagAnalyser extends React.PureComponent {
       {
         nerdGraphEntityData: {
           entities: [],
-          accounts: {},
-          entityTypes: {},
         },
         entityCount: 0,
         loadedEntities: 0,
@@ -238,7 +234,7 @@ export default class TagAnalyser extends React.PureComponent {
         queryCursor: nextCursor,
         entityCount,
         loadedEntities: loadedEntities + entities.length,
-        entityLoading: nextCursor,
+        entityLoading: (loadedEntities + entities.length) < 1000 ? nextCursor : null, //nextCursor,
       },
       () => {
         if (nextCursor) {
@@ -253,22 +249,10 @@ export default class TagAnalyser extends React.PureComponent {
 
     let newNerdGraphEntityData = utils.deepCopy(nerdGraphEntityData);
     entities.forEach((entity) => {
-      // get all the tags
-      const { tags } = entity;
       entity.mandatoryTags = [];
       entity.optionalTags = [];
       entity.complianceScore = 0.00;
-
       newNerdGraphEntityData.entities.push(entity);
-
-      const acctId = entity.account.id.toString()
-      if (!newNerdGraphEntityData.accounts[acctId]) newNerdGraphEntityData.accounts[acctId] = []
-      newNerdGraphEntityData.accounts[acctId].push(entity.guid)
-
-      const domain = entity.domain
-      if (!newNerdGraphEntityData.entityTypes[domain]) newNerdGraphEntityData.entityTypes[domain] = []
-      newNerdGraphEntityData.entityTypes[domain].push(entity.guid)
-
     });
     this.setState({
       nerdGraphEntityData: newNerdGraphEntityData,
