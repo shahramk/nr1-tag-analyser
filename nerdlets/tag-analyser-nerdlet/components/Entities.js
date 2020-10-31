@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { sortBy } from 'lodash';
+import { sortBy, isEqual } from 'lodash';
 import { Spinner, Stack, StackItem } from 'nr1';
 
 import MenuBar from './MenuBar/MenuBar';
@@ -12,7 +12,7 @@ import Modal from './Modal/Modal';
 import Config from './Config/Config';
 import utils from './Config/utils';
 
-class Entities extends React.PureComponent {
+export default class Entities extends React.Component {
   state = {
     loading: true,
     entities: [],
@@ -30,6 +30,11 @@ class Entities extends React.PureComponent {
     },
     showConfigModal: false,
     tags: {},
+
+    // pagination state
+    rowsPerPage: 25, // move this to user storage - allow 25, 50, 100 per page
+    currentPage: 1,
+    totalPages: 0,
     entityIndex: {
       startIdx: 0,
       endIdx: 0,
@@ -55,6 +60,19 @@ class Entities extends React.PureComponent {
         this.processEntityTypes();
       }
     );
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+
+    // if (!isEqual(this.props, nextProps)) {
+    //   console.log("@@@@ this.props: ", this.props, "\n@@@@ nextProps: ", nextProps);
+    //     return true
+    // }
+    if (!isEqual(this.state, nextState)) {
+      // console.log("@@@@@@ this.state: ", this.state, "\n@@@@@@ nextState: ", nextState);
+      return true;
+    }
+    return false;
   }
 
   processEntityTypes = () => {
@@ -122,7 +140,7 @@ class Entities extends React.PureComponent {
 
     // if an account has been set up with specific templates, merge the global set in
     // there is no other way to properly identify duplicates between account and global level
-    // when applying tags to scoring, or displaying the tags, account=level tags override global
+    // when applying tags to scoring, or displaying the tags, account-level tags override global
     for (const [key, value] of Object.entries(tags)) {
       if (key !== 'global') {
         tags.global.forEach((tag) => {
@@ -205,6 +223,12 @@ class Entities extends React.PureComponent {
       domainEntities: entitiesCopy,
       accountEntities, //: entitiesCopy,
       loading: false,
+    }, () => {
+      this.setState({
+        currentPage: 1,
+        totalPages: this.getTotalPages(accountEntities.length),
+        entityIndex: this.getEntityIndex(1, accountEntities.length),
+      });
     });
   };
 
@@ -226,7 +250,6 @@ class Entities extends React.PureComponent {
 
     return filteredEntities;
   }
-
 
   getComplianceBand = (score) => {
     const { complianceBands } = this.state.nerdStoreConfigData;
@@ -322,6 +345,37 @@ class Entities extends React.PureComponent {
     return entityFilters.length ? entityFilters : ['None'];
   }
 
+  getTotalPages = (entityCount) => {
+    const { rowsPerPage } = this.state;
+
+    if (!entityCount) {
+      return 0;
+    }
+    else {
+      const totalPages = entityCount < rowsPerPage ? 1 : entityCount / rowsPerPage
+      return Math.ceil(totalPages);
+    }
+  }
+
+  getEntityIndex = (currentPage, entityCount) => {
+    const { rowsPerPage } = this.state;
+
+    const entityIndex = {
+      startIdx: entityCount ? (currentPage-1) * rowsPerPage + 1 : 0,
+      endIdx: entityCount ? currentPage * rowsPerPage > entityCount ? entityCount : currentPage * rowsPerPage : 0,
+    }
+
+    return entityIndex;
+  }
+
+  getPaginationInfo(entityCount) {
+    const { currentPage } = this.state;
+    const totalPages = this.getTotalPages(entityCount);
+    const entityIndex = this.getEntityIndex(currentPage, entityCount);
+
+    return { currentPage, totalPages, entityIndex, }
+  }
+
   onSelectAccount = (data) => {
     const { domainEntities } = this.state;
     let filteredEntities = [];
@@ -340,6 +394,7 @@ class Entities extends React.PureComponent {
     this.setState({
       accountEntities: filteredEntities,
       selectedAccounts: data.value,
+      currentPage: 1,
     });
   };
 
@@ -388,10 +443,15 @@ class Entities extends React.PureComponent {
       }
     }
 
-    this.setState({ selectedDomain, complianceItemStatus: complianceItemCopy });
+    this.setState({
+      selectedDomain,
+      complianceItemStatus: complianceItemCopy,
+      currentPage: 1,
+    });
   };
 
   onFilterEntityTable = (filter) => {
+    // toggle filter if the selected filter selected again
     const { displayFilter } = this.state;
     this.setState({
       displayFilter: displayFilter === filter ? 'FULL' : filter,
@@ -426,8 +486,26 @@ class Entities extends React.PureComponent {
     }
   };
 
-  onChangePage = (newEntityPageIndex) => {
-    this.setState({ entityIndex: newEntityPageIndex });
+  onChangePage = (direction, entityCount) => {
+    let { currentPage, totalPages } = this.state;
+
+    switch(direction) {
+      case 'first':
+        currentPage = 1;
+        break;
+      case 'back':
+        currentPage--;
+        break;
+      case 'forward':
+        currentPage++;
+        break;
+      case 'last':
+        currentPage = totalPages;
+        break;
+    }
+    this.setState({ currentPage }, () => {
+      this.setState({ entityIndex: this.getEntityIndex(currentPage, entityCount) });
+    });
   }
 
   renderComplianceScore(entities, itemType, itemName) {
@@ -450,9 +528,9 @@ class Entities extends React.PureComponent {
       selectedAccounts,
       showConfigModal,
       nerdStoreConfigData,
-      entityIndex,
     } = this.state;
     const tableEntities = this.getTableEntities();
+    const paginationInfo = this.getPaginationInfo(tableEntities.length);
     const { user } = this.props;
     const modalStyle = { width: '90%', height: '90%' };
 
@@ -502,10 +580,16 @@ class Entities extends React.PureComponent {
             entityType={this.getTableFilters().join(', ')}
             complianceBands={nerdStoreConfigData.complianceBands}
             entities={tableEntities}
+            paginationInfo={paginationInfo}
             onChangePage={this.onChangePage}
           />
           <EntityTable
-            entities={tableEntities.splice(entityIndex.startIdx-1, entityIndex.endIdx-entityIndex.startIdx+1)}
+            entities={
+              utils.deepCopy(tableEntities).splice(
+                paginationInfo.entityIndex.startIdx-1, 
+                paginationInfo.entityIndex.endIdx-paginationInfo.entityIndex.startIdx+1
+              )
+            }
             complianceBands={nerdStoreConfigData.complianceBands}
           />
         </div>
@@ -529,5 +613,3 @@ Entities.propTypes = {
   nerdStoreConfigData: PropTypes.object.isRequired,
   accounts: PropTypes.array.isRequired,
 };
-
-export default Entities;

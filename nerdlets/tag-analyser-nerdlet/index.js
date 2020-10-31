@@ -234,7 +234,7 @@ export default class TagAnalyser extends React.PureComponent {
         queryCursor: nextCursor,
         entityCount,
         loadedEntities: loadedEntities + entities.length,
-        entityLoading: (loadedEntities + entities.length) < 1000 ? nextCursor : null, //nextCursor,
+        entityLoading: nextCursor,
       },
       () => {
         if (nextCursor) {
