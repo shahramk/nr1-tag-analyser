@@ -42,6 +42,7 @@ export default class PdfGenerator extends React.Component {
               type={Button.TYPE.PLAIN_NEUTRAL}
               iconType={Button.ICON_TYPE.DATE_AND_TIME__DATE_AND_TIME__TIME}
               sizeType={Button.SIZE_TYPE.SMALL}
+              loading
             >
               Preparing
             </Button>
