@@ -378,23 +378,18 @@ export default class Entities extends React.Component {
 
   onSelectAccount = (data) => {
     const { domainEntities } = this.state;
-    let filteredEntities = [];
+    let filteredEntities = this.getEntitiesBySelectedAccounts(domainEntities, data.value);
 
-    if (data.value.length === 0) {
-      filteredEntities = utils.deepCopy(domainEntities);
-    } else {
-      data.value.forEach((value) => {
-        filteredEntities = filteredEntities.concat(
-          domainEntities.filter(
-            (entity) => entity.account.id.toString() === value.split(':')[0]
-          )
-        );
-      });
-    }
     this.setState({
       accountEntities: filteredEntities,
       selectedAccounts: data.value,
-      currentPage: 1,
+    }, () => {
+      const filteredEntities = this.getTableEntities();
+      this.setState({
+        currentPage: 1,
+        totalPages: this.getTotalPages(filteredEntities.length),
+        entityIndex: this.getEntityIndex(1, filteredEntities.length),
+      });
     });
   };
 
@@ -446,7 +441,13 @@ export default class Entities extends React.Component {
     this.setState({
       selectedDomain,
       complianceItemStatus: complianceItemCopy,
-      currentPage: 1,
+    }, () => {
+      const filteredEntities = this.getTableEntities();
+      this.setState({
+        currentPage: 1,
+        totalPages: this.getTotalPages(filteredEntities.length),
+        entityIndex: this.getEntityIndex(1, filteredEntities.length),
+      });
     });
   };
 
@@ -528,9 +529,12 @@ export default class Entities extends React.Component {
       selectedAccounts,
       showConfigModal,
       nerdStoreConfigData,
+      currentPage,
+      totalPages,
+      entityIndex,
     } = this.state;
     const tableEntities = this.getTableEntities();
-    const paginationInfo = this.getPaginationInfo(tableEntities.length);
+    const paginationInfo = { currentPage, totalPages, entityIndex };
     const { user } = this.props;
     const modalStyle = { width: '90%', height: '90%' };
 
