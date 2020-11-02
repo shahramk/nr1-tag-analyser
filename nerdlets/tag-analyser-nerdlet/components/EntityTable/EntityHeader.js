@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Button, Icon, Select, SelectItem } from 'nr1';
+import { Button, Icon, Select, SelectItem, Tooltip } from 'nr1';
 import PdfGenerator from '../PdfGenerator';
 
 export default class EntityHeader extends React.Component {
@@ -37,7 +37,7 @@ export default class EntityHeader extends React.Component {
             }`}
             onClick={() => onChangePage('first')}
           >
-            <Icon type={Icon.TYPE.INTERFACE__CARET__CARET_LEFT__WEIGHT_BOLD} />
+            <Tooltip text="First page"><Icon type={Icon.TYPE.INTERFACE__CARET__CARET_LEFT__WEIGHT_BOLD} /></Tooltip>
           </div>
           <div
             className={`pagination-group-item pagination-nav ${
@@ -45,14 +45,14 @@ export default class EntityHeader extends React.Component {
             }`}
             onClick={() => onChangePage('back')}
           >
-            <Icon type={Icon.TYPE.INTERFACE__CHEVRON__CHEVRON_LEFT__WEIGHT_BOLD} />
+            <Tooltip text="Previous page"><Icon type={Icon.TYPE.INTERFACE__CHEVRON__CHEVRON_LEFT__WEIGHT_BOLD} /></Tooltip>
           </div>
           <div 
             className={`pagination-group-item pagination-nav ${
               !count || currentPage === totalPages ? 'disabled' : 'enabled'
             }`}
             onClick={() => onChangePage('forward')}>
-            <Icon type={Icon.TYPE.INTERFACE__CHEVRON__CHEVRON_RIGHT__WEIGHT_BOLD} />
+            <Tooltip text="Next page"><Icon type={Icon.TYPE.INTERFACE__CHEVRON__CHEVRON_RIGHT__WEIGHT_BOLD} /></Tooltip>
           </div>
           <div
             className={`pagination-group-item pagination-nav ${
@@ -62,7 +62,7 @@ export default class EntityHeader extends React.Component {
             }`}
             onClick={() => onChangePage('last')}
           >
-            <Icon type={Icon.TYPE.INTERFACE__CARET__CARET_RIGHT__WEIGHT_BOLD} />
+            <Tooltip text="Last page"><Icon type={Icon.TYPE.INTERFACE__CARET__CARET_RIGHT__WEIGHT_BOLD} /></Tooltip>
           </div>
         </div>
       </>
@@ -85,17 +85,18 @@ export default class EntityHeader extends React.Component {
       <div className="entity__table__header__panel">
         <div className="message-group">
           <div className="message-group-item">
-            <Select
-              className="filter-group"
-              value={currentFilter}
-              onChange={filter}
-            >
-              <SelectItem value="FULL">All</SelectItem>
-              <SelectItem value="OUT_OF_COMPLIANCE">Out of Compliance</SelectItem>
-              <SelectItem value="IN_COMPLIANCE">In Compliance</SelectItem>
-            </Select>
+            <Tooltip text="Filter by compliance (out of compliance shows any entities missing mandatory tags)">
+              <Select
+                className="filter-group"
+                value={currentFilter}
+                onChange={filter}
+              >
+                <SelectItem value="FULL">All</SelectItem>
+                <SelectItem value="OUT_OF_COMPLIANCE">Out of Compliance</SelectItem>
+                <SelectItem value="IN_COMPLIANCE">In Compliance</SelectItem>
+              </Select>
+            </Tooltip>
           </div>
-
 
           <div className="message-group-item">
             {`Showing ${count}${entityType !== 'None' ? ` ${entityType} ` : ''} 
