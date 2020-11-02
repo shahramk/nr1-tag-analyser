@@ -8,16 +8,64 @@
   justify-content: space-between;
   padding-bottom: 0;
   padding-top: 2rem;
-
-  >.button__row {
-    margin: 0;
-    margin-bottom: .75rem;
+  
+  >.message-group {
+    font-size: 1.25rem;
+    padding-bottom: .75rem;
+    display: flex;
+  
+    >.message-group-item {
+      padding-right: 1rem;
+    }
   }
-}
 
-.entity__table__header__message {
-  font-size: 1.25rem;
-  padding-bottom: .75rem;
+  >.action-group {
+    margin: 0;
+    padding-bottom: .75rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    >.action-group-item {
+      padding-left: 1rem;
+
+      >.pagination-group {
+        display: flex;
+        
+        .pagination-message {
+          padding: .25rem;
+          padding-right: .5rem;
+        }
+
+        .pagination-nav {
+
+          padding: .25rem;
+
+          &.enabled {
+            cursor: pointer;
+            &:hover {
+              background-color: #EEEFEF;
+            }
+          }
+          
+          &.disabled {
+            color: #acadad;
+          }
+        }
+      }
+
+      >.filter-group {
+        display: flex;
+        flex-direction: row;
+        align-items: start;
+          
+        label {
+          padding-right: 1rem;
+        }
+  
+      }
+    }
+  }
 }
 
 .entity__table__panel {

@@ -425,7 +425,7 @@ export default class Entities extends React.PureComponent {
     });
   };
 
-  onFilterEntityTable = (filter) => {
+  onFilterEntityTable = (event, filter) => {
     // toggle filter if the selected filter selected again
     const { displayFilter } = this.state;
     this.setState({
@@ -509,6 +509,7 @@ export default class Entities extends React.PureComponent {
       currentPage,
       totalPages,
       entityIndex,
+      displayFilter,
     } = this.state;
 
     const { user } = this.props;
@@ -554,6 +555,7 @@ export default class Entities extends React.PureComponent {
         <div className="table__container">
           <EntityHeader
             filter={this.onFilterEntityTable}
+            currentFilter={displayFilter}
             count={tableEntities.length}
             accounts={
               selectedAccounts.length > 0 ? selectedAccounts.join(', ') : ''
