@@ -28,6 +28,9 @@ export default class TagAnalyser extends React.PureComponent {
       entities: [],
     },
     nerdStoreConfigData: {},
+    nerdStoreError: false,
+    nerdStoreErrorMessages: [],
+    configErrors: [],
     showConfigEntryMessage: false,
     showConfigModal: false,
     showConfigExitMessage: false,
@@ -94,32 +97,46 @@ export default class TagAnalyser extends React.PureComponent {
   getConfigFromNerdStore = async () => {
     const data = await this.fetchConfig();
 
-    const templateExists = data && data.templates && data.templates.length > 0;
-    const complianceBandsExists = data && data.complianceBands && Object.keys(data.complianceBands).length === 3;
-    const entityTypesExists = data && data.entityTypes && data.entityTypes.length > 0;
-
-    if ( !(templateExists && complianceBandsExists && entityTypesExists) ) {
-
+    if (data && data.errors) {
+      console.log(data.errors);
+      const nerdStoreErrorMessages = data.errors.map(err => err.message)
       this.setState({ 
-        templateLoading: false,
-        templateInitialized: false,
-        showConfigModal: true,
-        showConfigEntryMessage: true,
+        nerdStoreError: true,
+        nerdStoreErrorMessages,
       });
     }
     else {
-      const nerdStoreConfigData = {
-        templates: data.templates,
-        complianceBands: data.complianceBands || helpers.defaultComplianceBands, 
-        entityTypes: data.entityTypes || helpers.defaultentityTypes,
+      const templateExists = data && data.templates && data.templates.length > 0;
+      const complianceBandsExists = data && data.complianceBands && Object.keys(data.complianceBands).length === 3;
+      const entityTypesExists = data && data.entityTypes && data.entityTypes.length > 0;
+
+      if ( !(templateExists && complianceBandsExists && entityTypesExists) ) {
+        const configErrors = [];
+        if (!templateExists) configErrors.push("Templates");
+        if (!entityTypesExists) configErrors.push("Entity Types");
+        if (!complianceBandsExists) configErrors.push("Compliance Score Bands");
+        this.setState({ 
+          templateLoading: false,
+          templateInitialized: false,
+          showConfigModal: true,
+          showConfigEntryMessage: true,
+          configErrors,
+        });
       }
-      this.setState({ 
-        nerdStoreConfigData, 
-        templateLoading: false, 
-        templateInitialized: true,
-      }, () => {
-        this.startLoadingEntityTags()
-      });
+      else {
+        const nerdStoreConfigData = {
+          templates: data.templates,
+          complianceBands: data.complianceBands || helpers.defaultComplianceBands, 
+          entityTypes: data.entityTypes || helpers.defaultentityTypes,
+        }
+        this.setState({ 
+          nerdStoreConfigData, 
+          templateLoading: false, 
+          templateInitialized: true,
+        }, () => {
+          this.startLoadingEntityTags()
+        });
+      }
     }
   }
 
@@ -131,7 +148,8 @@ export default class TagAnalyser extends React.PureComponent {
       documentId: helpers.nerdStoreInfo.documentName,   // 'config',
     });
 
-    const result = (config || {}).data;
+    // const result = (config || {}).data;
+    const result = config.errors ? config : (config || {}).data;
 
     return result;
   };
@@ -190,7 +208,7 @@ export default class TagAnalyser extends React.PureComponent {
     }
     `;
     const variables = {
-      queryString: "domain in ("  +  helpers.defaultEntityTypes.join(", ")  +  ")",
+      queryString: "domain in ("  +  helpers.defaultEntityTypes.map(item => "'" + item + "'").join(", ")  +  ")",
     };
     if (queryCursor) {
       variables.nextCursor = queryCursor;
@@ -309,17 +327,10 @@ export default class TagAnalyser extends React.PureComponent {
           showConfigEntryMessage: false,
         });
         break;
-      case 'exit':
+      case 'reconfig':
         this.setState({
           showConfigExitMessage: false,
           showConfigModal: true,
-        });
-        break;
-      case 'cancel':
-        this.setState({
-          showConfigExitMessage: false,
-          showConfigModal: false,
-          templateLoading: true,
         });
         break;
       }
@@ -327,6 +338,9 @@ export default class TagAnalyser extends React.PureComponent {
 
   render() {
     const {
+      nerdStoreError,
+      nerdStoreErrorMessages,
+      configErrors,
       entityLoading, 
       entityCount, 
       loadedEntities, 
@@ -343,16 +357,37 @@ export default class TagAnalyser extends React.PureComponent {
 
     const modalStyle = { width: '90%', height: '90%' };
 
-    if (userLoading || templateLoading) {
+    if (nerdStoreError) {
+      // show nerdStoreErrorMessages
+      return <div className="config__popup__message">
+            <center><h1>NerdStore Access Error!</h1></center>
+            <br/>
+            <ul style={{padding: '20px', margin: '20px'}}>
+            {nerdStoreErrorMessages.map(errMsg => {
+              return <li key={errMsg}>{errMsg}</li>
+            })}
+            </ul>
+            <br/>
+            <center><h2>Please correct the issuse{nerdStoreErrorMessages.length>1 ? 's' : ''} and restart this nerdlet</h2></center>
+            <br/>
+          </div>
+    }
+    else if (userLoading || templateLoading) {
       return (<Spinner />);
     }
     else {
       if (!templateLoading) {
         if (showConfigEntryMessage) {
           return <div className="config__popup__message">
-            <center><h1>No Configuration Data Found</h1></center>
+            <center><h1>{configErrors.length === 3 ? 'No' : 'Incomplete'} Configuration Data Found</h1></center>
             <br/>
-            <center><h2>Please enter configuration information for this application</h2></center>
+            <center><h2>Please enter configuration information for the following section(s):</h2></center>
+            <br/>
+            <ul style={{padding: '20px', margin: '20px'}}>
+            {configErrors.map(configMessage => {
+              return <li key={configMessage}>{configMessage}</li>
+            })}
+            </ul>
             <br/>
             <center>
               <Button className="config_message_button" sizeType={Button.SIZE_TYPE.MEDIUM} type={Button.TYPE.PRIMARY} onClick={() => {this.onCheckConfig('enter')}}>OK</Button>
@@ -368,13 +403,12 @@ export default class TagAnalyser extends React.PureComponent {
         }
         else if (showConfigExitMessage) {
           return <div className="config__popup__message">
-            <center><h1>Config Not Completed</h1></center>
+            <center><h1>Config Data Not Completed</h1></center>
             <br/>
             <center><h2>Please complete the configuration before you could continue to the next step</h2></center>
             <br/>
             <center>
-              <Button className="config_message_button" style={{marginRight: "50px"}} sizeType={Button.SIZE_TYPE.MEDIUM} type={Button.TYPE.NORMAL} onClick={() => {this.onCheckConfig('cancel')}}>Cancel</Button>
-              <Button className="config_message_button" style={{marginLeft: "50px"}} sizeType={Button.SIZE_TYPE.MEDIUM} type={Button.TYPE.NORMAL} onClick={() => {this.onCheckConfig('exit')}}>OK</Button>
+              <Button className="config_message_button" style={{marginLeft: "50px"}} sizeType={Button.SIZE_TYPE.MEDIUM} type={Button.TYPE.NORMAL} onClick={() => {this.onCheckConfig('reconfig')}}>OK</Button>
             </center>
           </div>
         }

@@ -1,25 +1,17 @@
-import iconSuccess from "../images/green-check-mark-2.png";
-import iconFailure from "../images/red-x-mark-2.png";
-import iconWarning from "../images/warning-2.png";
-
-
-const masterAccountId = 192626;
+ // NOTE: SET masterAccountId constant to YOUR NEW RELIC MASTER ACCOUNT ID
+const masterAccountId = 0;
 
 const nerdStoreInfo = {
     collectionName: 'tag-analyser',
     documentName: 'config',
-
-    // good test data -- rpd id 739516
-    // collectionName: 'tag-analyser-test8',
-    // documentName: 'config-test8',
 }
 
 const defaultEntityTypes = [
-    "'APM'", 
-    "'MOBILE'", 
-    "'BROWSER'",
-    "'INFRA'",
-    "'SYNTH'",
+    "APM", 
+    "MOBILE", 
+    "BROWSER",
+    "INFRA",
+    "SYNTH",
 ]
 
 const defaultComplianceBands = {
