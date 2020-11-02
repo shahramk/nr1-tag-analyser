@@ -27,7 +27,7 @@ export default class EntityHeader extends React.Component {
       <>
         <div className="pagination-group">
           <div className="pagination-group-item pagination-message">
-            {`${startIdx} to ${endIdx} of ${count}`}
+            {`${startIdx} to ${endIdx} `}
           </div>
           <div
             className={`pagination-group-item pagination-nav ${
