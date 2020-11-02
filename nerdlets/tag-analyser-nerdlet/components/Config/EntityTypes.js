@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 
 import { Checkbox } from 'nr1';
 
+import helpers from '../../../shared/utils/helpers'
+
 export default class EntityTypes extends React.Component {
   static propTypes = {
     entityTypes: PropTypes.arrayOf(PropTypes.string),
@@ -28,7 +30,7 @@ export default class EntityTypes extends React.Component {
   render() {
     const { entityTypes } = this.props;
 
-    const types = ['APM', 'MOBILE', 'BROWSER', 'INFRA', 'SYNTH'];
+    const types = helpers.defaultEntityTypes.sort();
 
     return (
       <>

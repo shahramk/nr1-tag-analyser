@@ -28,7 +28,7 @@ export default class EntityHeader extends React.Component {
     return (
       <div style={{border: '1px solid black'}}>
         <Button
-          onClick={() => this.props.onChangePage('first', count)}
+          onClick={() => this.props.onChangePage('first')}
           type={Button.TYPE.PLAIN_NEUTRAL}
           // iconType={Button.ICON_TYPE.INTERFACE__CHEVRON__CHEVRON_LEFT__WEIGHT_BOLD}
           iconType={Button.ICON_TYPE.INTERFACE__CARET__CARET_LEFT__WEIGHT_BOLD}
@@ -36,7 +36,7 @@ export default class EntityHeader extends React.Component {
           disabled={!count || currentPage === 1 || totalPages <= 1}
         />
         <Button
-          onClick={() => this.props.onChangePage('back', count)}
+          onClick={() => this.props.onChangePage('back')}
           type={Button.TYPE.PLAIN_NEUTRAL}
           iconType={Button.ICON_TYPE.INTERFACE__CHEVRON__CHEVRON_LEFT__WEIGHT_BOLD}
           sizeType={Button.SIZE_TYPE.SMALL}
@@ -52,14 +52,14 @@ export default class EntityHeader extends React.Component {
         </Button>
         
         <Button
-          onClick={() => this.props.onChangePage('forward', count)}
+          onClick={() => this.props.onChangePage('forward')}
           type={Button.TYPE.PLAIN_NEUTRAL}
           iconType={Button.ICON_TYPE.INTERFACE__CHEVRON__CHEVRON_RIGHT__WEIGHT_BOLD}
           sizeType={Button.SIZE_TYPE.SMALL}
           disabled={!count || currentPage === totalPages}
         />
         <Button
-          onClick={() => this.props.onChangePage('last', count)}
+          onClick={() => this.props.onChangePage('last')}
           type={Button.TYPE.PLAIN_NEUTRAL}
           iconType={Button.ICON_TYPE.INTERFACE__CARET__CARET_RIGHT__WEIGHT_BOLD}
           sizeType={Button.SIZE_TYPE.SMALL}

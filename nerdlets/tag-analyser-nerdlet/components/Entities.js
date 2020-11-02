@@ -12,12 +12,13 @@ import Modal from './Modal/Modal';
 import Config from './Config/Config';
 import utils from './Config/utils';
 
-export default class Entities extends React.Component {
+export default class Entities extends React.PureComponent {
   state = {
     loading: true,
     entities: [],
     domainEntities: [],
     accountEntities: [],
+    tableEntities: [],
     nerdStoreConfigData: {},
     tempConfigData: null,
     displayFilter: 'FULL',
@@ -60,19 +61,6 @@ export default class Entities extends React.Component {
         this.processEntityTypes();
       }
     );
-  }
-
-  shouldComponentUpdate(nextProps, nextState) {
-
-    // if (!isEqual(this.props, nextProps)) {
-    //   console.log("@@@@ this.props: ", this.props, "\n@@@@ nextProps: ", nextProps);
-    //     return true
-    // }
-    if (!isEqual(this.state, nextState)) {
-      // console.log("@@@@@@ this.state: ", this.state, "\n@@@@@@ nextState: ", nextState);
-      return true;
-    }
-    return false;
   }
 
   processEntityTypes = () => {
@@ -221,14 +209,10 @@ export default class Entities extends React.Component {
 
     this.setState({
       domainEntities: entitiesCopy,
-      accountEntities, //: entitiesCopy,
+      accountEntities,
       loading: false,
     }, () => {
-      this.setState({
-        currentPage: 1,
-        totalPages: this.getTotalPages(accountEntities.length),
-        entityIndex: this.getEntityIndex(1, accountEntities.length),
-      });
+      this.setTableEntities();
     });
   };
 
@@ -298,16 +282,16 @@ export default class Entities extends React.Component {
     };
   }
 
-  getTableEntities = () => {
+  setTableEntities = () => {
     // extract entities to display
     const { accountEntities, complianceItemStatus, displayFilter } = this.state;
 
-    let filteredEntities = utils.deepCopy(accountEntities);
+    let tableEntities = utils.deepCopy(accountEntities);
 
-    // filter displayed entities by entity types (if any)
+    // filter displayed entities by selected entity type (if any)
     complianceItemStatus.entityType.forEach((et) => {
       if (et.selected) {
-        filteredEntities = accountEntities.filter(
+        tableEntities = accountEntities.filter(
           (entity) => entity.domain === et.name
         );
       }
@@ -315,21 +299,27 @@ export default class Entities extends React.Component {
 
     switch (displayFilter) {
       case 'IN_COMPLIANCE':
-        filteredEntities = filteredEntities.filter(
+        tableEntities = tableEntities.filter(
           (entity) => entity.complianceScore === 100
         );
         break;
 
       case 'OUT_OF_COMPLIANCE':
-        filteredEntities = filteredEntities.filter(
+        tableEntities = tableEntities.filter(
           (entity) => entity.complianceScore !== 100
         );
         break;
     }
 
-    filteredEntities = sortBy(filteredEntities, ['account.name', 'domain']);
-
-    return filteredEntities;
+    this.setState({
+      tableEntities: sortBy(tableEntities, ['account.name', 'domain'])
+    }, () => {
+      this.setState({
+        currentPage: 1,
+        totalPages: this.getTotalPages(),
+        entityIndex: this.getEntitiesPageIndex(1),
+      });
+    });
   };
 
   getTableFilters() {
@@ -345,35 +335,29 @@ export default class Entities extends React.Component {
     return entityFilters.length ? entityFilters : ['None'];
   }
 
-  getTotalPages = (entityCount) => {
-    const { rowsPerPage } = this.state;
+  getTotalPages = () => {
+    const { rowsPerPage, tableEntities } = this.state;
+    const count = tableEntities.length;
 
-    if (!entityCount) {
+    if (!count) {
       return 0;
     }
     else {
-      const totalPages = entityCount < rowsPerPage ? 1 : entityCount / rowsPerPage
+      const totalPages = count < rowsPerPage ? 1 : count / rowsPerPage
       return Math.ceil(totalPages);
     }
   }
 
-  getEntityIndex = (currentPage, entityCount) => {
-    const { rowsPerPage } = this.state;
+  getEntitiesPageIndex = (currentPage) => {
+    const { rowsPerPage, tableEntities } = this.state;
+    const count = tableEntities.length;
 
     const entityIndex = {
-      startIdx: entityCount ? (currentPage-1) * rowsPerPage + 1 : 0,
-      endIdx: entityCount ? currentPage * rowsPerPage > entityCount ? entityCount : currentPage * rowsPerPage : 0,
+      startIdx: count ? (currentPage-1) * rowsPerPage + 1 : 0,
+      endIdx: count ? currentPage * rowsPerPage > count ? count : currentPage * rowsPerPage : 0,
     }
 
     return entityIndex;
-  }
-
-  getPaginationInfo(entityCount) {
-    const { currentPage } = this.state;
-    const totalPages = this.getTotalPages(entityCount);
-    const entityIndex = this.getEntityIndex(currentPage, entityCount);
-
-    return { currentPage, totalPages, entityIndex, }
   }
 
   onSelectAccount = (data) => {
@@ -384,12 +368,7 @@ export default class Entities extends React.Component {
       accountEntities: filteredEntities,
       selectedAccounts: data.value,
     }, () => {
-      const filteredEntities = this.getTableEntities();
-      this.setState({
-        currentPage: 1,
-        totalPages: this.getTotalPages(filteredEntities.length),
-        entityIndex: this.getEntityIndex(1, filteredEntities.length),
-      });
+      this.setTableEntities();
     });
   };
 
@@ -442,12 +421,7 @@ export default class Entities extends React.Component {
       selectedDomain,
       complianceItemStatus: complianceItemCopy,
     }, () => {
-      const filteredEntities = this.getTableEntities();
-      this.setState({
-        currentPage: 1,
-        totalPages: this.getTotalPages(filteredEntities.length),
-        entityIndex: this.getEntityIndex(1, filteredEntities.length),
-      });
+      this.setTableEntities();
     });
   };
 
@@ -456,6 +430,8 @@ export default class Entities extends React.Component {
     const { displayFilter } = this.state;
     this.setState({
       displayFilter: displayFilter === filter ? 'FULL' : filter,
+    }, () => {
+      this.setTableEntities();
     });
   };
 
@@ -487,7 +463,7 @@ export default class Entities extends React.Component {
     }
   };
 
-  onChangePage = (direction, entityCount) => {
+  onChangePage = (direction) => {
     let { currentPage, totalPages } = this.state;
 
     switch(direction) {
@@ -505,7 +481,7 @@ export default class Entities extends React.Component {
         break;
     }
     this.setState({ currentPage }, () => {
-      this.setState({ entityIndex: this.getEntityIndex(currentPage, entityCount) });
+      this.setState({ entityIndex: this.getEntitiesPageIndex(currentPage) });
     });
   }
 
@@ -525,6 +501,7 @@ export default class Entities extends React.Component {
     const {
       loading,
       accountEntities,
+      tableEntities,
       accountList,
       selectedAccounts,
       showConfigModal,
@@ -533,9 +510,9 @@ export default class Entities extends React.Component {
       totalPages,
       entityIndex,
     } = this.state;
-    const tableEntities = this.getTableEntities();
-    const paginationInfo = { currentPage, totalPages, entityIndex };
+
     const { user } = this.props;
+    const paginationInfo = { currentPage, totalPages, entityIndex };
     const modalStyle = { width: '90%', height: '90%' };
 
     return loading ? (
