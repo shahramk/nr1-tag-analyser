@@ -7,7 +7,7 @@ import PdfGenerator from '../PdfGenerator';
 export default class EntityHeader extends React.Component {
   state = {
     generatingPdf: false,
-  }
+  };
 
   onGeneratePdf = () => this.setState({ generatingPdf: true });
   onPdfDownload = () => this.setState({ generatingPdf: false });
@@ -35,24 +35,47 @@ export default class EntityHeader extends React.Component {
                 ? 'disabled'
                 : 'enabled'
             }`}
-            onClick={() => onChangePage('first')}
+            onClick={
+              !count || currentPage === 1 || totalPages <= 1
+                ? null
+                : () => onChangePage('first')
+            }
           >
-            <Tooltip text="First page"><Icon type={Icon.TYPE.INTERFACE__CARET__CARET_LEFT__WEIGHT_BOLD} /></Tooltip>
+            <Tooltip text="First page">
+              <Icon
+                type={Icon.TYPE.INTERFACE__CARET__CARET_LEFT__WEIGHT_BOLD}
+              />
+            </Tooltip>
           </div>
           <div
             className={`pagination-group-item pagination-nav ${
               !count || currentPage === 1 ? 'disabled' : 'enabled'
             }`}
-            onClick={() => onChangePage('back')}
+            onClick={
+              !count || currentPage === 1 ? null : () => onChangePage('back')
+            }
           >
-            <Tooltip text="Previous page"><Icon type={Icon.TYPE.INTERFACE__CHEVRON__CHEVRON_LEFT__WEIGHT_BOLD} /></Tooltip>
+            <Tooltip text="Previous page">
+              <Icon
+                type={Icon.TYPE.INTERFACE__CHEVRON__CHEVRON_LEFT__WEIGHT_BOLD}
+              />
+            </Tooltip>
           </div>
-          <div 
+          <div
             className={`pagination-group-item pagination-nav ${
               !count || currentPage === totalPages ? 'disabled' : 'enabled'
             }`}
-            onClick={() => onChangePage('forward')}>
-            <Tooltip text="Next page"><Icon type={Icon.TYPE.INTERFACE__CHEVRON__CHEVRON_RIGHT__WEIGHT_BOLD} /></Tooltip>
+            onClick={
+              !count || currentPage === totalPages
+                ? null
+                : () => onChangePage('forward')
+            }
+          >
+            <Tooltip text="Next page">
+              <Icon
+                type={Icon.TYPE.INTERFACE__CHEVRON__CHEVRON_RIGHT__WEIGHT_BOLD}
+              />
+            </Tooltip>
           </div>
           <div
             className={`pagination-group-item pagination-nav ${
@@ -60,14 +83,22 @@ export default class EntityHeader extends React.Component {
                 ? 'disabled'
                 : 'enabled'
             }`}
-            onClick={() => onChangePage('last')}
+            onClick={
+              !count || currentPage === totalPages || totalPages <= 1
+                ? null
+                : () => onChangePage('last')
+            }
           >
-            <Tooltip text="Last page"><Icon type={Icon.TYPE.INTERFACE__CARET__CARET_RIGHT__WEIGHT_BOLD} /></Tooltip>
+            <Tooltip text="Last page">
+              <Icon
+                type={Icon.TYPE.INTERFACE__CARET__CARET_RIGHT__WEIGHT_BOLD}
+              />
+            </Tooltip>
           </div>
         </div>
       </>
     );
-  }
+  };
 
   render() {
     const {
@@ -92,7 +123,9 @@ export default class EntityHeader extends React.Component {
                 onChange={filter}
               >
                 <SelectItem value="FULL">All</SelectItem>
-                <SelectItem value="OUT_OF_COMPLIANCE">Out of Compliance</SelectItem>
+                <SelectItem value="OUT_OF_COMPLIANCE">
+                  Out of Compliance
+                </SelectItem>
                 <SelectItem value="IN_COMPLIANCE">In Compliance</SelectItem>
               </Select>
             </Tooltip>
@@ -117,14 +150,14 @@ export default class EntityHeader extends React.Component {
                 pdfComplete={this.onPdfDownload}
               />
             ) : (
-                <Button
-                  onClick={() => this.onGeneratePdf()}
-                  iconType={Button.ICON_TYPE.DOCUMENTS__DOCUMENTS__NOTES}
-                  sizeType={Button.SIZE_TYPE.SMALL}
-                >
-                  Generate pdf
-                </Button>
-              )}
+              <Button
+                onClick={() => this.onGeneratePdf()}
+                iconType={Button.ICON_TYPE.DOCUMENTS__DOCUMENTS__NOTES}
+                sizeType={Button.SIZE_TYPE.SMALL}
+              >
+                Generate pdf
+              </Button>
+            )}
           </div>
         </div>
       </div>
